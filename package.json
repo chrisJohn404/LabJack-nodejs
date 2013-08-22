@@ -8,6 +8,7 @@
 	"dependencies": {
 		"ffi": "~1",
 		"optimist": "~0",
-		"ref": "~0"
+		"ref": "~0",
+		"rewire": "~1"
 	}
 }

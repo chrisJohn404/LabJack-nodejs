@@ -1,53 +1,28 @@
 {
- "T7":
+ "header":
+ {
+   "filename":"private_ljm_constants.json",
+   "version":"2013.08.21.A",
+   "checksum":"-1",
+   "support_url":"",
+   "tags_base_url":""
+ },
+
+ "registers":
  [
-  {
-         "versionNumber":0.9500, 
-         "fileName":"T7firmware_009500_07312013.bin", 
-         "location":"http://labjack.com/sites/default/files/2013/07/T7firmware_009500_07312013.bin"
-   },
-   {
-   		"versionNumber":0.9421, 
-   		"fileName":"T7firmware_009421_07102013.bin", 
-   		"location":"http://labjack.com/sites/default/files/2013/07/T7firmware_009421_07102013.bin"
-   },
-   {
-   		"versionNumber":0.9420, 
-   		"fileName":"T7firmware_009420_07102013.bin",
-   		"location":"http://labjack.com/sites/default/files/2013/07/T7firmware_009420_07102013.bin"
-   },
-   {
-   		"versionNumber":0.9418, 
-   		"fileName":"T7firmware_009418_07032013.bin",
-   		"location":"http://labjack.com/sites/default/files/2013/07/T7firmware_009418_07032013.bin"
-   },
-   {
-   		"versionNumber":0.9416, 
-   		"fileName":"T7firmware_009416_06282013.bin",
-   		"location":"http://labjack.com/sites/default/files/2013/06/T7firmware_009416_06282013.bin"
-   },
-   {
-         "versionNumber":0.9308,
-         "fileName":"T7firmware_009308_04222013.bin",
-         "location":"http://labjack.com/sites/default/files/2013/04/T7firmware_009308_04222013.bin"
-   }
+   {"address":0, "name":"AIN#(0:254)", "type":"FLOAT32", "devices":["U3", "U6", "T7", "UE9"], "readwrite":"R", "tags":["AIN"], "streamable":true, "displayname":["Analog In #"], "description":"Returns the voltage of the specified analog input."},
+   {"address":1000, "name":"DAC#(0:1)", "type":"FLOAT32", "devices":["U3", "U6", "T7", "UE9"], "readwrite":"RW", "tags":["DAC"], "displayname":["Analog Out #"], "description":"Pass a voltage for the specified analog output."},
+   {"address":2000, "name":"FIO#(0:7)", "type":"UINT16", "devices":["U3", "U6", "T7", "UE9"], "readwrite":"RW", "tags":["DIO"], "altnames":["DIO#(0:7)"], "description":"Read or set the state of 1 bit of digital I/O.  Also configures the direction to input or output."},
+   {"address":2008, "name":"EIO#(0:7)", "type":"UINT16", "devices":["U3", "U6", "T7", "UE9"], "readwrite":"RW", "tags":["DIO"], "altnames":["DIO#(8:15)"], "description":"Read or set the state of 1 bit of digital I/O.  Also configures the direction to input or output."},
+   {"address":2016, "name":"CIO#(0:3)", "type":"UINT16", "devices":["U3", "U6", "T7", "UE9"], "readwrite":"RW", "tags":["DIO"], "altnames":["DIO#(16:19)"], "description":"Read or set the state of 1 bit of digital I/O.  Also configures the direction to input or output."},
+   {"address":2020, "name":"MIO#(0:2)", "type":"UINT16", "devices":["U6", "T7", "UE9"], "readwrite":"RW", "tags":["DIO"], "altnames":["DIO#(20:22)"], "description":"Read or set the state of 1 bit of digital I/O.  Also configures the direction to input or output."}
  ],
- "Digit":
- [
-   {
-         "versionNumber":1.1617,
-         "fileName":"DigitFW_011617_06152013.bin",
-         "location":"http://labjack.com/sites/default/files/2013/06/DigitFW_011617_06152013.bin"
-   },
-   {
-         "versionNumber":1.1615,
-         "fileName":"DigitFW_011615_06102013.bin",
-         "location":"http://labjack.com/sites/default/files/2013/06/DigitFW_011615_06102013.bin"
-   },
-   {
-         "versionNumber":1.1500,
-         "fileName":"DigitFW_011500_03202013.bin",
-         "location":"http://labjack.com/sites/default/files/2013/03/DigitFW_011500_03202013.bin"
-   }
- ]
+
+  "comments":
+  [
+    "Use jslint.com to check validity of this JSON file after every change.",
+    "Try to go for noun_adjective_verb in register names.",
+    "End Of Comments"
+  ]
+
 }
