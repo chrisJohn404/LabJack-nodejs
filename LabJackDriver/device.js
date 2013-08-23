@@ -22,66 +22,12 @@ function DriverInterfaceError(description)
 };
 
 
-debugging = function(genDebugging, debugSystem)
-{
-	if(genDebugging != null)
-	{	
-		this.genDebug = genDebugging;
-		if(debugSystem != null)
-		{
-			if((debugSystem&1) != 0)
-			{
-				this.open = 1;
-			}
-			if(debugSystem&2 != 0)
-			{
-				this.close = 1;
-			}
-			if(debugSystem&4 != 0)
-			{
-				//use fake device
-				this.fakeDevice = 0;
-			}
-		}
-		else
-		{
-			this.open=null;
-		}
-	}
-	else
-	{
-		this.genDebug = null;
-		this.open = null;
-		this.close = null;
-	}
-};
-
-var typeSizes = {
-	UINT64: 8,
-	INT32: 4,
-	STRING: 50,
-	UINT16: 2,
-	BYTE: 1,
-	UINT32: 4,
-	FLOAT32: 4
-}
-function getTypeSize(typeName)
-{
-	var size = typeSizes[typeName];
-	if(size === undefined)
-		throw "Unknown type"; // TODO: Need better error
-	return size;
-};
-
-
 
 /**
  * @constructor for a LabJack device in .js
  */
-exports.labjack = function (genDebuggingEnable, debugSystem)
+exports.labjack = function ()
 {
-	this.debug = new debugging(genDebuggingEnable, debugSystem);
-
 	this.ljm = driverLib.getDriver();
 	
 	this.handle = null;
@@ -225,8 +171,7 @@ exports.labjack = function (genDebuggingEnable, debugSystem)
 		var dt, ct, id;
 
 		//Determine how open() was used
-		if(arguments.length == 0)
-		{
+		if(arguments.length == 0) {
 			//If there are two args, aka open() call
 			dt = "LJM_dtANY";
 			ct = "LJM_ctANY";
@@ -243,8 +188,7 @@ exports.labjack = function (genDebuggingEnable, debugSystem)
 
 		//Complete Synchronous function-call,
 		//Make sure we aren't already connected to a device
-		if(this.handle == null)
-		{
+		if(this.handle == null) {
 			//Create variables for the ffi call
 			var aDeviceHandle = new ref.alloc(ref.types.int,1);
 			var output;
@@ -255,8 +199,7 @@ exports.labjack = function (genDebuggingEnable, debugSystem)
 			var idType = typeof(id);
 
 			//Determine which LJM function to call
-			if((dtType=="number")&&(ctType=="number")&&(idType=="string"))
-			{
+			if((dtType=="number")&&(ctType=="number")&&(idType=="string")) {
 				//call LJM_Open() using the ffi async call
 				output = this.ljm.LJM_Open.async(dt, ct, id, aDeviceHandle);
 			}
@@ -315,8 +258,7 @@ exports.labjack = function (genDebuggingEnable, debugSystem)
 	 * 			maxBytesPerMB:{number} 
 	 * 		}
 	**/
-	this.getHandleInfo = function(onError, onSuccess)
-	{
+	this.getHandleInfo = function(onError, onSuccess) {
 		//Check to make sure a device has been opened
 		if(this.checkStatus(onError)) { return 1;};
 
@@ -385,8 +327,7 @@ exports.labjack = function (genDebuggingEnable, debugSystem)
 	 * 		On Error: LJM_ Error Number.
 	 * @throws {Error} Thrown if any errors are discovered.
 	**/
-	this.getHandleInfoSync = function()
-	{
+	this.getHandleInfoSync = function() {
 		//Check to make sure a device has been opened
 		this.checkStatus();
 
@@ -437,13 +378,12 @@ exports.labjack = function (genDebuggingEnable, debugSystem)
 	 * @param  {function} onError   function to be called when successful
 	 * @param  {function} onSuccess function to be called when an error occurs
 	 */
-	this.readRaw = function(data, onError, onSuccess)
-	{
+	this.readRaw = function(data, onError, onSuccess) {
 		//Check to make sure a device has been opened
 		if(this.checkStatus(onError)) { return 1;};
 
 		//Make sure the data is valid
-		if (data instanceof array) {
+		if (data instanceof Array) {
 			if (typeof(data[0]) != "number") {
 				onError("Data is not a number array");
 			}
@@ -482,8 +422,7 @@ exports.labjack = function (genDebuggingEnable, debugSystem)
 	 * @throws {DriverInterfaceError} If input args aren't correct
 	 * @throws {DriverOperationError} If an LJM error occurs
 	 */
-	this.readRawSync = function(data)
-	{
+	this.readRawSync = function(data) {
 		//Check to make sure a device has been opened
 		this.checkStatus();
 
@@ -530,8 +469,7 @@ exports.labjack = function (genDebuggingEnable, debugSystem)
 	 * @param  {number/string} onSuccess Data requested from the device
 	 * @throws {DriverInterfaceError} If the input args aren't correct
 	 */
-	this.read = function(address, onError, onSuccess)
-	{
+	this.read = function(address, onError, onSuccess) {
 		//Check to make sure a device has been opened
 		if(this.checkStatus(onError)) { return 1;};
 
@@ -541,39 +479,106 @@ exports.labjack = function (genDebuggingEnable, debugSystem)
 		var result = new ref.alloc('double',1);
 
 		if (typeof(address) == "string") {
-			var info;
-			info.directionValid = 1;
-			info.type = 0;
+			var info = this.constants.getAddressInfo(address, 'R');
 			if ((info.directionValid == 1) && (info.type != 98)) {
 				//Perform a eReadName operation
 				
 				//Allocate space for a read value
 				var result = new ref.alloc('double',1);
-
+				this.ljm.LJM_eReadName.async(
+					this.handle, 
+					address, 
+					result,
+					function(err, res) {
+						if(err) throw err;
+						if(res == 0) {
+							//Success
+							onSuccess(result.deref());
+						} else {
+							//Error
+							onError(res);
+						}
+					});
 			} else if ((info.directionValid == 1) && (info.type == 98)) {
 				//Perform a eReadNameString operation
 				
+				//Allocate space for the result
+				var strBuffer = new Buffer(50);//max string size
+				strBuffer.fill(0);
+				this.ljm.LJM_eReadNameString.async(
+					this.handle, 
+					address, 
+					strBuffer, 
+					function(err, res) {
+						if (err) throw err;
+						if(res == 0) {
+							//Calculate the length of the string
+							var i=0;
+							while(strBuffer[i] != 0) {
+								i++;
+							}
+							onSuccess(strBuffer.toString('utf8',0,i));
+						} else {
+							onError(res);
+						}
+					}
+				);
 			} else {
 				onError("Invalid Address");
 			}
 		} else if (typeof(address) == "number") {
-			var info;
-			info.directionValid = 1;
-			info.type = 0;
+			var info = this.constants.getAddressInfo(address, 'R');
 			if ((info.directionValid == 1) && (info.type != 98)) {
 				//Perform a eReadName operation
 				
 				//Allocate space for a read value
 				var result = new ref.alloc('double',1);
-
+				this.ljm.LJM_eReadAddress.async(
+					this.handle, 
+					address, 
+					info.type, 
+					result,
+					function(err, res) {
+						if(err) throw err;
+						if(res == 0) {
+							//Success
+							//console.log(result);
+							onSuccess(result.deref());
+						} else {
+							//Error
+							onError(res);
+						}
+					});
 			} else if ((info.directionValid == 1) && (info.type == 98)) {
-				//Perform a eReadNumberString operation
+				//Perform a eReadAddressString operation
 				
+				//Allocate space for the result
+				var strBuffer = new Buffer(50);//max string size
+				strBuffer.fill(0);
+
+				this.ljm.LJM_eReadAddressString.async(
+					this.handle, 
+					address, 
+					strBuffer, 
+					function(err, res) {
+						if (err) throw err;
+						if(res == 0) {
+							//Calculate the length of the string
+							var i=0;
+							while(strBuffer[i] != 0) {
+								i++;
+							}
+							onSuccess(strBuffer.toString('utf8',0,i));
+						} else {
+							onError(res);
+						}
+					}
+				);
 			} else {
 				onError("Invalid Address");
 			}
 		} else {
-
+			onError("Invalid Arguments");
 		}
 	}
 	
@@ -584,50 +589,99 @@ exports.labjack = function (genDebuggingEnable, debugSystem)
 	 * @throws {DriverInterfaceError} If input args aren't correct
 	 * @throws {DriverOperationError} If an LJM error occurs
 	 */
-	this.readSync = function(address)
-	{
+	this.readSync = function(address) {
 		//Check to make sure a device has been opened
 		this.checkStatus();
 
 		var output;
 		var addressNum = 0;
-
+		var result;
 		if (typeof(address) == "string") {
-			var info;
-			info.directionValid = 1;
-			info.type = 0;
+			var info = this.constants.getAddressInfo(address, 'R');
 			if ((info.directionValid == 1) && (info.type != 98)) {
 				//Perform a eReadName operation
 				
 				//Allocate space for a read value
-				var result = new ref.alloc('double',1);
-
+				result = new ref.alloc('double',1);
+				output = this.ljm.LJM_eReadName(this.handle, address, result);
+				if(output == 0) {
+					result = result.deref();
+				}
 			} else if ((info.directionValid == 1) && (info.type == 98)) {
 				//Perform a eReadNameString operation
 				
+				//Allocate space for the result
+				var strBuffer = new Buffer(50);//max string size
+				strBuffer.fill(0);
+
+				output = this.ljm.LJM_eReadNameString(
+					this.handle, 
+					address, 
+					strBuffer
+				);
+				if(output == 0) {
+					var i=0;
+					while(strBuffer[i] != 0) {
+						i++;
+					}
+					result = strBuffer.toString('utf8',0,i);
+				}
 			} else {
 				throw new DriverInterfaceError("Invalid Address");
 				return -1;
 			}
 		} else if (typeof(address) == "number") {
-			var info;
-			info.directionValid = 1;
-			info.type = 0;
+			var info = this.constants.getAddressInfo(address, 'R');
 			if ((info.directionValid == 1) && (info.type != 98)) {
 				//Perform a eReadName operation
 				
 				//Allocate space for a read value
-				var result = new ref.alloc('double',1);
+				result = new ref.alloc('double',1);
+				output = this.ljm.LJM_eReadAddress(
+					this.handle, 
+					address, 
+					info.type, 
+					result
+				);
+				if(output == 0) {
+					result = result.deref();
+				}
 
 			} else if ((info.directionValid == 1) && (info.type == 98)) {
 				//Perform a eReadNumberString operation
 				
+				//Allocate space for the result
+				var strBuffer = new Buffer(50);//max string size
+				strBuffer.fill(0);
+
+				output = this.ljm.LJM_eReadAddressString(
+					this.handle, 
+					address, 
+					strBuffer
+				);
+				if(output == 0) {
+					var i=0;
+					while(strBuffer[i] != 0) {
+						i++;
+					}
+					result = strBuffer.toString('utf8',0,i);
+				}
 			} else {
 				throw new DriverInterfaceError("Invalid Address");
 				return -1;
 			}
 		} else {
-
+			throw new DriverInterfaceError("Invalid Arguments");
+			return -1;
+		}
+		if(output == 0)
+		{
+			return result;
+		}
+		else
+		{
+			throw new DriverOperationError(output);
+			return output;
 		}
 	}
 
@@ -767,107 +821,10 @@ exports.labjack = function (genDebuggingEnable, debugSystem)
 	};
 	*/
 
-	/**
-	 * Function reads a single string-based modbus address
-	 *
-	 * @params {number/string} address that you wish to read
-	 * @return {string} number that was read or an error message
-	 * 		NOTE: As long as the error messages are out of range +-10 this is ok.
-	 */
-	/*
-	this.readS = function(address)
-	{
-		this.checkStatus();
+	
+	this.readMany = function(addresses) {
 
-		var ret = this.checkCallback(arguments);
-		var useCallBacks = ret[0];
-		var onError = ret[1];
-		var onSuccess = ret[2];
-
-		var errorResult;
-		var strBuffer = new Buffer(50);//max string size
-		strBuffer.fill(0);
-		if((typeof(address))=="string")
-		{
-			if(useCallBacks)
-			{
-				errorResult = this.driver.LJM_eReadNameString.async(this.handle, address,strBuffer, function(err, res){
-					if (err) throw err;
-					if(res == 0)
-					{
-						//console.log('Length: '+strBuffer.length);
-						//console.log('Ans: '+strBuffer.toString());
-						//Calculate the size of the string...
-						var i = 0;
-						while(strBuffer[i] != 0)
-						{
-							i++;
-						}
-						//console.log(strBuffer.toString('utf8',0,i).length);
-						onSuccess(strBuffer.toString('utf8',0,i));
-					}
-					else
-					{
-						onError(res);
-					}
-				});
-				return 0;
-			}
-			else
-			{
-				errorResult = this.driver.LJM_eReadNameString(this.handle, address,strBuffer);
-			}
-		}
-		else if((typeof(address))=="number")
-		{
-			if(useCallBacks)
-			{
-				errorResult = this.driver.LJM_eReadAddressString.async(this.handle, address,strBuffer, function(err, res){
-					if (err) throw err;
-					if(res == 0)
-					{
-						//console.log('Length: '+strBuffer.length);
-						//console.log('Ans: '+strBuffer.toString());
-						//Calculate the size of the string...
-						var i = 0;
-						while(strBuffer[i] != 0)
-						{
-							i++;
-						}
-						//console.log(strBuffer.toString('utf8',0,i).length);
-						onSuccess(strBuffer.toString('utf8',0,i));
-					}
-					else
-					{
-						onError(res);
-					}
-				});
-				return 0;
-			}
-			else
-			{
-				errorResult = this.driver.LJM_eReadAddressString(this.handle, address,strBuffer);
-			}
-		}
-		else
-		{
-			console.log(typeof(address));
-			throw new DriverInterfaceError("Invalid address type.");
-		}
-		//Check for an error from driver & throw error
-		if(errorResult != 0)
-		{
-			throw new DriverOperationError(errorResult);
-		}
-		var i = 0;
-		while(strBuffer[i] != 0)
-		{
-			i++;
-		}
-		return strBuffer.toString('utf8',0,i);
 	}
-	*/
-
 	/**
 	 * Function reads from multiple modbus addresses
 	 *
