@@ -684,145 +684,162 @@ exports.labjack = function ()
 			return output;
 		}
 	}
+	/**
+	 * Function performs LJM_eReadNames and LJM_eReadAddresses driver calls
+	 * when given certain arguments.  If addresses is type: number-array then it
+	 *  calls LJM_eReadAddresses, if addresses is type: string-array then it 
+	 *  calls LJM_eReadNames.
+	 *  
+	 * @param  {number/string array} 	addresses 	The addresses to read
+	 * @param  {function} 				onError 	Error-callback
+	 * @param  {function} 				onSuccess 	Successful-callback
+	 */
+	this.readMany = function(addresses, onError, onSuccess) {
+		//Check to make sure that addresses is an Array instance
+		if(!(addresses instanceof Array)) {
+			//Error!!
+		}
 
-	//Code-base for the read function:
-	/*
-	this.read = function(address)
-	{
-		this.checkStatus();
-
-		var ret = this.checkCallback(arguments);
-		var useCallBacks = ret[0];
-		var onError = ret[1];
-		var onSuccess = ret[2];
-
+		//Get important info & allocate argument variables
+		var length = addresses.length;
+		var returnResults = Array();
+		var results = new Buffer(8*length);
+		var errors = new ref.alloc('int',1);
+		errors.fill(0);
 		var output;
-		var addressNum = 0;
-		
-		var errorResult;
-		var result = new ref.alloc('double',1);
-		var r
+
+		if(length < 1) {
+			//Error!!
+		}
+		console.log("Before type-branch", addresses);
+		if(typeof(addresses[0]) == 'string') {
+			var i;
+			//ref: http://tootallnate.github.io/ref/
+			var aNames = new Buffer(8*length);
+			console.log("Building eReadNames data");
+			for(i = 0; i < length; i++) {
+				var buf = new Buffer(addresses[i].length+1);
+				ref.writeCString(buf,0,addresses[i]);
+				ref.writePointer(aNames,i*8,buf);
+			}
+			console.log("Calling eReadNames");
+			errorResult = this.ljm.LJM_eReadNames.async(
+				this.handle, 
+				length, 
+				aNames, 
+				results, 
+				errors, 
+				function(err, res) {
+					if(err) throw err;
+					var offset = 0;
+					for(i in addresses) {
+						returnResults[i] = results.readDoubleLE(offset);
+						offset += 8;
+					}
+					if((res == 0)) {
+						onSuccess(returnResults);
+					} else {
+						onError({retError:res, errFrame:errors.deref()});
+					}
+				}
+			);
+		} else if(typeof(addresses[0]) == 'number') {
+			var addrBuff = new Buffer(4*length);
+			var addrTypeBuff = new Buffer(4*length);
+			var inValidOperation = 0;
+
+			//Integer Returned by .dll function
+			var info;
+			var offset=0;
+			i = 0;
+			console.log("Building eReadAddresses data");
+			for(i = 0; i < length; i++)
+			{
+				info = this.constants.getAddressInfo(addresses[i], 'R');
+				if(info.directionValid == 1)
+				{
+					addrTypeBuff.writeInt32LE(info.type,offset);
+					addrBuff.writeInt32LE(addresses[i],offset);
+					offset += 4;
+				}
+				else
+				{
+					if(useCallBacks)
+					{
+						onError("Invalid Address: "+addresses[i]+", Index: "+i);
+						return driver_const.LJME_INVALID_ADDRESS;
+					}
+					else
+					{
+						throw new DriverInterfaceError("Invalid address");
+					}
+				}
+			}
+
+			console.log("Calling eReadAddresses");
+			errorResult = this.ljm.LJM_eReadAddresses.async(
+				this.handle, 
+				length, 
+				addrBuff, 
+				addrTypeBuff, 
+				results, 
+				errors, 
+				function(err, res) {
+					if(err) throw err;
+					var offset = 0;
+					for(i in addresses) {
+						returnResults[i] = results.readDoubleLE(offset);
+						offset += 8;
+					}
+					if((res == 0)) {
+						onSuccess(returnResults);
+					} else {
+						onError({retError:res, errFrame:errors.deref()});
+					}
+				}
+			);
+		} else {
+			//Error!! input arguments aren't of proper type.
+			console.log("ERROR! NO-VALID-Type");
+		}
+
+	}
+	/**
+	 * Function performs LJM_eReadNames and LJM_eReadAddresses driver calls
+	 * when given certain arguments.  If addresses is type: number-array then it
+	 *  calls LJM_eReadAddresses, if addresses is type: string-array then it 
+	 *  calls LJM_eReadNames.
+	 *  
+	 * @param  {number/string array} addresses 	The addresses to read
+	 * @return {number array}           		The return-value array
+	 * @throws {DriverInterfaceError} If input args aren't correct
+	 * @throws {DriverOperationError} If an LJM error occurs
+	 */
+	this.readManySync = function(addresses) {
+		//Check to make sure that addresses is an Array instance
+		if(!(addresses instanceof Array)) {
+			//Error!!
+		}
+
+		//Get important info & allocate argument variables
+		var length = addresses.length;
+		var returnResults = Array();
+		var results = new Buffer(8*length);
+		var errors = new ref.alloc('int',1);
+		errors.fill(0);
+		var output;
+
+		if(length < 1) {
+			//Error!!
+		}
+		if(typeof(addresses[0]) == 'string') {
 
 
-		if((typeof(address))=="string")
-		{
-			var info = this.constants.getAddressInfo(address, 'R');
-			if((info.directionValid == 1) && (info.type != 98))
-			{
-				if(useCallBacks)
-				{
-					var self = this;
-					errorResult = this.driver.LJM_eReadName.async(this.handle, address, result, function(err, res) {
-						if (err) throw err;
-						//console.log("mycall returned: " + res + ", Value: " + result.deref());
-						if(res == 0)
-						{
-							onSuccess(result.deref());
-						}
-						else
-						{
-							onError(res);
-						}
-					});
-					return 0;
-				}
-				else
-				{
-					errorResult = this.driver.LJM_eReadName(this.handle, address, result);
-				}
-			}
-			else if((info.directionValid == 1) && (info.type == 98))
-			{
-				if(useCallBacks)
-				{
-					errorResult = this.readS(address, onError, onSuccess);
-					return 0;
-				}
-				else
-				{
-					return this.readS(address);
-				}
-			}
-			else
-			{
-				if(useCallBacks)
-				{
-					onError("Invalid Address");
-					return driver_const.LJME_INVALID_ADDRESS;
-				}
-				else
-				{
-					throw new DriverInterfaceError("Invalid address");
-				}
-			}
-		}
-		else if((typeof(address))=="number")
-		{
-			//Get information necessary about the address requested
-			var info = this.constants.getAddressInfo(address, 'R');
-			if((info.directionValid == 1) && (info.type != 98))//Check validity to cleanly report error
-			{
-				if(useCallBacks)
-				{
-					errorResult = this.driver.LJM_eReadAddress.async(this.handle, address, info.type, result, function(err, res) {
-						if (err) throw err;
-						if(res == 0)
-						{
-							onSuccess(result.deref());
-						}
-						else
-						{
-							onError(res);
-						}
-					});
-					return 0;
-				}
-				else
-				{
-					errorResult = this.driver.LJM_eReadAddress(this.handle, address, info.type, result);
-				}
-			}
-			else if((info.directionValid == 1) && (info.type == 98))
-			{
-				if(useCallBacks)
-				{
-					errorResult = this.readS(address, onError, onSuccess);
-					return 0;
-				}
-				else
-				{
-					return this.readS(address);
-				}
-			}
-			else
-			{
-				if(useCallBacks)
-				{
-					onError("Invalid Address");
-					return driver_const.LJME_INVALID_ADDRESS;
-				}
-				else
-				{
-					throw new DriverInterfaceError("Invalid address");
-				}
-			}
-		}
-		else
-		{
-			//console.log('Address: ', address);
-			throw new DriverInterfaceError("Invalid address type.");
-		}
-		//Check for an error from driver & throw error
-		if(errorResult != 0)
-		{
-			throw new DriverOperationError(errorResult);
-		}
-		return result.deref();
-	};
-	*/
+		} else if(typeof(addresses[0]) == 'number') {
 
-	
-	this.readMany = function(addresses) {
+		} else {
+			//Error!! input arguments aren't of proper type.
+		}
 
 	}
 	/**

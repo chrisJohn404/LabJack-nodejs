@@ -58,11 +58,13 @@ module.exports = {
         	function(res) {
         		fakeDriver.clearLastFunctionCall();
         		fakeDriver.setExpectedResult(0);
+        		fakeDriver.clearArgumentsList();
         		callback();
         	});
         }
         else {
         	fakeDriver.clearLastFunctionCall();
+        	fakeDriver.clearArgumentsList();
         	fakeDriver.setExpectedResult(0);
         	callback();
         }
@@ -338,16 +340,24 @@ module.exports = {
 		syncRun.run(testList);
 		asyncRun.run(testList,
 			function(res) {
-				//Error
+				//Error, should never be called.... isn't ever used... woops....
 			}, function(res) {
-				//Success
+				//Success				
 				var funcs = fakeDriver.getLastFunctionCall();
 				var results = asyncRun.getResults();
+				var args = fakeDriver.getArgumentsList();
+				//console.log(args)
 				var i;
 				for(i = 0; i < testList.length; i++) {
 					test.equal(funcs[i], expectedFunctionList[i]);
 					test.equal(results[i], expectedResultList[i]);
 				}
+				//Test to make sure the address-to-type conversion worked (sync)
+				test.equal(args[1][2],driver_const.LJM_FLOAT32);
+
+				//Test to make sure the address-to-type conversion worked(async)
+				test.equal(args[5][2],driver_const.LJM_FLOAT32);
+
 				test.done();
 			});		
 	},
@@ -358,37 +368,37 @@ module.exports = {
 	 * @param  {[type]} test The test object.
 	 */
 	testReadMany: function(test) {
-		// var resArray = [testVal,testVal+1];
-		// fakeDriver.setResultArg(resArray);
-		// asyncRun.config(dev,null);
-		// var testList = [
-		// 'readMany(0,2)',
-		// 'readMany("AIN0","AIN1")',
-		// ];
-		// var expectedFunctionList = [ 
-		// 	'LJM_eReadAddressesAsync',
-		// 	'LJM_eReadNamesAsync',
-		// ];
-		// var expectedResultList = [
-		// 	resArray,
-		// 	resArray,
-		// ];
-		// asyncRun.run(testList,
-		// 	function(res) {
-		// 		//Error
-		// 	}, function(res) {
-		// 		//Success
-		// 		var funcs = fakeDriver.getLastFunctionCall();
-		// 		var results = asyncRun.getResults();
-		// 		var i,j;
-		// 		for(i = 0; i < testList.length; i++) {
-		// 			for(j = 0; j < resArray.length; j++) {
-		// 				test.equal(funcs[i][j], expectedFunctionList[i][j]);
-		// 				test.equal(results[i][j], expectedResultList[i][j]);
-		// 			}
-		// 		}
-		// 		test.done();
-		// 	});	
+		var resArray = [testVal,testVal+1];
+		fakeDriver.setResultArg(resArray);
+		asyncRun.config(dev,null);
+		var testList = [
+		'readMany([0,2])',
+		'readMany(["AIN0","AIN1"])',
+		];
+		var expectedFunctionList = [ 
+			'LJM_eReadAddressesAsync',
+			'LJM_eReadNamesAsync',
+		];
+		var expectedResultList = [
+			resArray,
+			resArray,
+		];
+		asyncRun.run(testList,
+			function(res) {
+				//Error
+			}, function(res) {
+				//Success
+				var funcs = fakeDriver.getLastFunctionCall();
+				var results = asyncRun.getResults();
+				var i,j;
+				for(i = 0; i < testList.length; i++) {
+					for(j = 0; j < resArray.length; j++) {
+						test.equal(funcs[i][j], expectedFunctionList[i][j]);
+						test.equal(results[i][j], expectedResultList[i][j]);
+					}
+				}
+				test.done();
+			});	
 		test.done();
 	},
 

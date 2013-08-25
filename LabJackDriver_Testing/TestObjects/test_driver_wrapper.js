@@ -32,9 +32,11 @@ function createCallableObject (defaultFunction, asyncFunction) {
 var lastFunctionCall = [];
 var expectedResult = 0;
 var expectedResultArg = null;
+var argumentsList = [];
 var reportEnd = function(callback) {
 	callback(null,expectedResult);
 }
+
 
 //******************************************************************************
 //*********************		Basic Device Functions	****************************
@@ -42,21 +44,25 @@ var reportEnd = function(callback) {
 var LJM_Open = createCallableObject(
 	function(deviceType, connectionType, identifier, handle) {
 		lastFunctionCall.push("LJM_Open");
+		argumentsList.push(arguments);
 		return expectedResult;
 	},
 	function(deviceType, connectionType, identifier, handle, callback) {
-		handle = 1;
 		lastFunctionCall.push("LJM_OpenAsync");
+		argumentsList.push(arguments);
+		handle = 1;
 		reportEnd(callback);
 	});
 
 var LJM_OpenS = createCallableObject(
 	function(deviceType, connectionType, identifier, handle) {
 		lastFunctionCall.push("LJM_OpenS");
+		argumentsList.push(arguments);
 		return expectedResult;
 	},
 	function(deviceType, connectionType, identifier, handle, callback) {
 		lastFunctionCall.push("LJM_OpenSAsync");
+		argumentsList.push(arguments);
 		handle = 1;
 		reportEnd(callback);
 	});
@@ -64,32 +70,36 @@ var LJM_OpenS = createCallableObject(
 var LJM_Close = createCallableObject(
 	function(handle) {
 		lastFunctionCall.push("LJM_Close");
+		argumentsList.push(arguments);
 		return expectedResult;
 	},
 	function(handle,callback) {
 		lastFunctionCall.push("LJM_CloseAsync");
+		argumentsList.push(arguments);
 		reportEnd(callback);
 	});
 
 var LJM_GetHandleInfo = createCallableObject(
 	function(handle,devT, conT, sN, ipAddr, port, maxB) {
+		lastFunctionCall.push("LJM_GetHandleInfo");
+		argumentsList.push(arguments);
 		devT.writeInt32LE(driver_const.LJM_DT_T7,0);
 		conT.writeInt32LE(driver_const.LJM_CT_USB,0);
 		sN.writeInt32LE(12345678,0);
 		ipAddr.writeInt32LE(0x01020304,0);
 		port.writeInt32LE(2468,0);
 		maxB.writeInt32LE(69,0);
-		lastFunctionCall.push("LJM_GetHandleInfo");
 		return expectedResult;
 	},
 	function(handle,devT, conT, sN,ipAddr, port, maxB, callback) {
+		lastFunctionCall.push("LJM_GetHandleInfoAsync");
+		argumentsList.push(arguments);
 		devT.writeInt32LE(driver_const.LJM_DT_T7,0);
 		conT.writeInt32LE(driver_const.LJM_CT_USB,0);
 		sN.writeInt32LE(12345678,0);
 		ipAddr.writeInt32LE(0x01020304,0);
 		port.writeInt32LE(2468,0);
 		maxB.writeInt32LE(69,0);
-		lastFunctionCall.push("LJM_GetHandleInfoAsync");
 		reportEnd(callback);
 	});
 //******************************************************************************
@@ -101,6 +111,8 @@ var LJM_GetHandleInfo = createCallableObject(
  */
 var LJM_ReadRaw = createCallableObject(
 	function(handle, data, length) {
+		lastFunctionCall.push("LJM_ReadRaw");
+		argumentsList.push(arguments);
 		var i;
 		var retN;
 		if(data.length == length) {
@@ -112,10 +124,11 @@ var LJM_ReadRaw = createCallableObject(
 		for(i = 0; i < data.length; i++) {
 			data.writeUInt8(retN,i);
 		}
-		lastFunctionCall.push("LJM_ReadRaw");
 		return expectedResult;
 	},
 	function(handle, data, length, callback) {
+		lastFunctionCall.push("LJM_ReadRawAsync");
+		argumentsList.push(arguments);
 		var i;
 		var retN;
 		if(data.length == length) {
@@ -127,7 +140,6 @@ var LJM_ReadRaw = createCallableObject(
 		for(i = 0; i < data.length; i++) {
 			data.writeUInt8(retN,i);
 		}
-		lastFunctionCall.push("LJM_ReadRawAsync");
 		reportEnd(callback);
 	});
 /**
@@ -136,11 +148,13 @@ var LJM_ReadRaw = createCallableObject(
 var LJM_eReadAddress = createCallableObject(
 	function(handle, address, addrType, resultPtr) {
 		lastFunctionCall.push("LJM_eReadAddress");
+		argumentsList.push(arguments);
 		resultPtr.writeDoubleLE(expectedResultArg,0);
 		return expectedResult;;
 	},
 	function(handle, address, addrType, resultPtr, callback) {
 		lastFunctionCall.push("LJM_eReadAddressAsync");
+		argumentsList.push(arguments);
 		resultPtr.writeDoubleLE(expectedResultArg,0);
 		reportEnd(callback);
 	});
@@ -150,11 +164,13 @@ var LJM_eReadAddress = createCallableObject(
 var LJM_eReadName = createCallableObject(
 	function(handle, address, resultPtr) {
 		lastFunctionCall.push("LJM_eReadName");
+		argumentsList.push(arguments);
 		resultPtr.writeDoubleLE(expectedResultArg,0);
 		return expectedResult;
 	},
 	function(handle, address, resultPtr, callback) {
 		lastFunctionCall.push("LJM_eReadNameAsync");
+		argumentsList.push(arguments);
 		resultPtr.writeDoubleLE(expectedResultArg,0);
 		reportEnd(callback);
 	});
@@ -164,12 +180,14 @@ var LJM_eReadName = createCallableObject(
 var LJM_eReadAddressString = createCallableObject(
 	function(handle, address, strBuffer) {
 		lastFunctionCall.push("LJM_eReadAddressString");
+		argumentsList.push(arguments);
 		strBuffer.write("TEST");
 		strBuffer.writeUInt8(0,4);
 		return expectedResult;
 	},
 	function(handle, address, strBuffer, callback) {
 		lastFunctionCall.push("LJM_eReadAddressStringAsync");
+		argumentsList.push(arguments);
 		strBuffer.write("TEST");
 		strBuffer.writeUInt8(0,4);
 		reportEnd(callback);
@@ -180,12 +198,14 @@ var LJM_eReadAddressString = createCallableObject(
 var LJM_eReadNameString = createCallableObject(
 	function(handle, address, strBuffer) {
 		lastFunctionCall.push("LJM_eReadNameString");
+		argumentsList.push(arguments);
 		strBuffer.write("TEST");
 		strBuffer.writeUInt8(0,4);
 		return expectedResult;
 	},
 	function(handle, address, strBuffer, callback) {
 		lastFunctionCall.push("LJM_eReadNameStringAsync");
+		argumentsList.push(arguments);
 		strBuffer.write("TEST");
 		strBuffer.writeUInt8(0,4);
 		reportEnd(callback);
@@ -194,22 +214,43 @@ var LJM_eReadNameString = createCallableObject(
  * Test-Function for Synchronous and Async Multiple-Operation functionality: 
  */
 var LJM_eReadAddresses = createCallableObject(
-	function(handle) {
+	function(handle, length, addresses, types, results, errors) {
 		lastFunctionCall.push("LJM_eReadAddresses");
+		argumentsList.push(arguments);
+		var numReads = addresses.length;
+		if(addresses.length != types.length) {
+			console.log('ERROR!!!', numReads, types.length);
+		}
+		console.log(results.length);
+		console.log(results);
 	},
-	function(handle, callback) {
+	function(handle, length, addresses, types, results, errors, callback) {
 		lastFunctionCall.push("LJM_eReadAddressesAsync");
+		argumentsList.push(arguments);
+		console.log(arguments);
+		var numReads = addresses.length;
+		if(addresses.length != types.length) {
+			console.log('ERROR!!!', numReads, types.length);
+		}
+		console.log(results.length);
+		console.log(results);
 		reportEnd(callback);
 	});
 /**
  * Test-Function for Synchronous and Async Multiple-Operation functionality: 
  */
 var LJM_eReadNames = createCallableObject(
-	function(handle) {
+	function(handle, addresses) {
 		lastFunctionCall.push("LJM_eReadNames");
+		argumentsList.push(arguments);
+		console.log(results.length);
+		console.log(results);
 	},
-	function(handle, callback) {
+	function(handle, addresses, callback) {
 		lastFunctionCall.push("LJM_eReadNamesAsync");
+		argumentsList.push(arguments);
+		console.log(results.length);
+		console.log(results);
 		reportEnd(callback);
 	});
 
@@ -223,9 +264,11 @@ var LJM_eReadNames = createCallableObject(
 var LJM_WriteRaw = createCallableObject(
 	function(handle) {
 		lastFunctionCall.push("LJM_WriteRaw");
+		argumentsList.push(arguments);
 	},
 	function(handle, callback) {
 		lastFunctionCall.push("LJM_WriteRawAsync");
+		argumentsList.push(arguments);
 		reportEnd(callback);
 	});
 /**
@@ -234,9 +277,11 @@ var LJM_WriteRaw = createCallableObject(
 var LJM_eWriteAddress = createCallableObject(
 	function(handle) {
 		lastFunctionCall.push("LWriteAddress");
+		argumentsList.push(arguments);
 	},
 	function(handle, callback) {
 		lastFunctionCall.push("LWriteAddressAsync");
+		argumentsList.push(arguments);
 		reportEnd(callback);
 	});
 /**
@@ -245,9 +290,11 @@ var LJM_eWriteAddress = createCallableObject(
 var LJM_eWriteName = createCallableObject(
 	function(handle) {
 		lastFunctionCall.push("LJM_eWriteName");
+		argumentsList.push(arguments);
 	},
 	function(handle, callback) {
 		lastFunctionCall.push("LJM_eWriteNameAsync");
+		argumentsList.push(arguments);
 		reportEnd(callback);
 	});
 /**
@@ -256,9 +303,11 @@ var LJM_eWriteName = createCallableObject(
 var LJM_eWriteAddressString = createCallableObject(
 	function(handle) {
 		lastFunctionCall.push("LJM_eWriteAddressString");
+		argumentsList.push(arguments);
 	},
 	function(handle, callback) {
 		lastFunctionCall.push("LJM_eWriteAddressStringAsync");
+		argumentsList.push(arguments);
 		reportEnd(callback);
 	});
 /**
@@ -267,9 +316,11 @@ var LJM_eWriteAddressString = createCallableObject(
 var LJM_eWriteNameString = createCallableObject(
 	function(handle) {
 		lastFunctionCall.push("LJM_eWriteNameString");
+		argumentsList.push(arguments);
 	},
 	function(handle, callback) {
 		lastFunctionCall.push("LJM_eWriteNameStringAsync");
+		argumentsList.push(arguments);
 		reportEnd(callback);
 	});
 /**
@@ -278,9 +329,11 @@ var LJM_eWriteNameString = createCallableObject(
 var LJM_eWriteAddresses = createCallableObject(
 	function(handle) {
 		lastFunctionCall.push("LJM_eWriteAddresses");
+		argumentsList.push(arguments);
 	},
 	function(handle, callback) {
 		lastFunctionCall.push("LJM_eWriteAddressesAsync");
+		argumentsList.push(arguments);
 		reportEnd(callback);
 	});
 /**
@@ -289,9 +342,11 @@ var LJM_eWriteAddresses = createCallableObject(
 var LJM_eWriteNames = createCallableObject(
 	function(handle) {
 		lastFunctionCall.push("LJM_eWriteNames");
+		argumentsList.push(arguments);
 	},
 	function(handle, callback) {
 		lastFunctionCall.push("LJM_eWriteNamesAsync");
+		argumentsList.push(arguments);
 		reportEnd(callback);
 	});
 
@@ -304,9 +359,11 @@ var LJM_eWriteNames = createCallableObject(
 var LJM_eAddresses = createCallableObject(
 	function(handle) {
 		lastFunctionCall.push("LJM_eAddresses");
+		argumentsList.push(arguments);
 	},
 	function(handle, callback) {
 		lastFunctionCall.push("LJM_eAddressesAsync");
+		argumentsList.push(arguments);
 		reportEnd(callback);
 	});
 /**
@@ -315,9 +372,11 @@ var LJM_eAddresses = createCallableObject(
 var LJM_eNames = createCallableObject(
 	function(handle) {
 		lastFunctionCall.push("LJM_eNames");
+		argumentsList.push(arguments);
 	},
 	function(handle, callback) {
 		lastFunctionCall.push("LJM_eNamesAsync");
+		argumentsList.push(arguments);
 		reportEnd(callback);
 	});
 
@@ -371,4 +430,9 @@ exports.setExpectedResult = function(val) {
 exports.setResultArg = function(val) {
 	expectedResultArg = val;
 }
-
+exports.clearArgumentsList = function(val) {
+	argumentsList = [];
+}
+exports.getArgumentsList = function(val) {
+	return argumentsList;
+}
