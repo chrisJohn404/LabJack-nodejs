@@ -33,14 +33,14 @@ var onSuccess = function(res) {
 		if(res != null) {
 			console.log(res);
 		} else {
-			console.log('SUCCESS');
+			console.log('Sync-ERROR:');
 		}
 	}
 	nextStep();
 };
 var onError = function(erStr) {
 	if(pRes) {
-		console.log('ERROR: ',erStr);
+		console.log('Sync-ERROR:',erStr);
 	}
 	results.push(erStr);
 	nextStep();
@@ -64,12 +64,19 @@ var runTest = function() {
 		try
 		{
 			output = eval(list[funcName]+'.'+funcArray[0]+'Sync('+funcArray[1]);
+			onSuccess(output);
 		}
 		catch (e)
 		{
-			console.log("Error",e);
-		}
-		onSuccess(output);
+			if(e.description != null) {
+				onError(e.description);
+			} else if(e.code != null) {
+				onError(e.code);
+			}
+			else {
+				onError("Weird-Error");
+			}
+		}	
 	}
 
 	return {'time':runTime};

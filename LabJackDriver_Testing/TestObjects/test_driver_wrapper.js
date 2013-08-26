@@ -224,6 +224,9 @@ var LJM_eReadAddresses = createCallableObject(
 		for(var i = 0; i < length; i++) {
 			results.writeDoubleLE(expectedResultArg[i],i*8);
 		}
+		if(expectedResult != 0) {
+			errors.writeUInt32LE(99,0);
+		}
 		return expectedResult;
 	},
 	function(handle, length, addresses, types, results, errors, callback) {
@@ -235,6 +238,9 @@ var LJM_eReadAddresses = createCallableObject(
 		}
 		for(var i = 0; i < length; i++) {
 			results.writeDoubleLE(expectedResultArg[i],i*8);
+		}
+		if(expectedResult != 0) {
+			errors.writeUInt32LE(99,0);
 		}
 		reportEnd(callback);
 	});
@@ -252,6 +258,9 @@ var LJM_eReadNames = createCallableObject(
 		for(var i = 0; i < length; i++) {
 			results.writeDoubleLE(expectedResultArg[i],i*8);
 		}
+		if(expectedResult != 0) {
+			errors.writeUInt32LE(99,0);
+		}
 		return expectedResult;
 	},
 	function(handle, length, addresses, results, errors, callback) {
@@ -263,6 +272,9 @@ var LJM_eReadNames = createCallableObject(
 		}
 		for(var i = 0; i < length; i++) {
 			results.writeDoubleLE(expectedResultArg[i],i*8);
+		}
+		if(expectedResult != 0) {
+			errors.writeUInt32LE(99,0);
 		}
 		reportEnd(callback);
 	});

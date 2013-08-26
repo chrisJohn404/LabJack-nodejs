@@ -524,7 +524,12 @@ exports.labjack = function ()
 					}
 				);
 			} else {
-				onError("Invalid Address");
+				if(info.type == -1) {
+					onError('Invalid Address');
+				} else if (info.directionValid == 0) {
+					onError('Invalid Read Attempt');
+				}
+				return -1;
 			}
 		} else if (typeof(address) == "number") {
 			var info = this.constants.getAddressInfo(address, 'R');
@@ -575,7 +580,12 @@ exports.labjack = function ()
 					}
 				);
 			} else {
-				onError("Invalid Address");
+				if(info.type == -1) {
+					onError('Invalid Address');
+				} else if (info.directionValid == 0) {
+					onError('Invalid Read Attempt');
+				}
+				return -1;
 			}
 		} else {
 			onError("Invalid Arguments");
@@ -627,7 +637,11 @@ exports.labjack = function ()
 					result = strBuffer.toString('utf8',0,i);
 				}
 			} else {
-				throw new DriverInterfaceError("Invalid Address");
+				if(info.type == -1) {
+					throw new DriverInterfaceError('Invalid Address');
+				} else if (info.directionValid == 0) {
+					throw new DriverInterfaceError('Invalid Read Attempt');
+				}
 				return -1;
 			}
 		} else if (typeof(address) == "number") {
@@ -667,7 +681,11 @@ exports.labjack = function ()
 					result = strBuffer.toString('utf8',0,i);
 				}
 			} else {
-				throw new DriverInterfaceError("Invalid Address");
+				if(info.type == -1) {
+					throw new DriverInterfaceError('Invalid Address');
+				} else if (info.directionValid == 0) {
+					throw new DriverInterfaceError('Invalid Read Attempt');
+				}
 				return -1;
 			}
 		} else {
@@ -695,9 +713,13 @@ exports.labjack = function ()
 	 * @param  {function} 				onSuccess 	Successful-callback
 	 */
 	this.readMany = function(addresses, onError, onSuccess) {
+		//Check to make sure a device has been opened
+		this.checkStatus();
+
 		//Check to make sure that addresses is an Array instance
 		if(!(addresses instanceof Array)) {
-			//Error!!
+			throw new DriverInterfaceError("Addresses must be type Array");
+			onError("Addresses must be type Array");
 		}
 
 		//Get important info & allocate argument variables
@@ -709,7 +731,8 @@ exports.labjack = function ()
 		var output;
 
 		if(length < 1) {
-			//Error!!
+			throw new DriverInterfaceError("Addresses array must contain data");
+			onError("Addresses array must contain data");
 		}
 		if(typeof(addresses[0]) == 'string') {
 			var i;
@@ -760,15 +783,12 @@ exports.labjack = function ()
 				}
 				else
 				{
-					if(useCallBacks)
-					{
-						onError("Invalid Address: "+addresses[i]+", Index: "+i);
-						return driver_const.LJME_INVALID_ADDRESS;
+					if(info.type == -1) {
+						onError({retError:"Invalid Address", errFrame:i});
+					} else if (info.directionValid == 0) {
+						onError({retError:"Invalid Read Attempt", errFrame:i});
 					}
-					else
-					{
-						throw new DriverInterfaceError("Invalid address");
-					}
+					return -1;
 				}
 			}
 
@@ -811,9 +831,13 @@ exports.labjack = function ()
 	 * @throws {DriverOperationError} If an LJM error occurs
 	 */
 	this.readManySync = function(addresses) {
+		//Check to make sure a device has been opened
+		this.checkStatus();
+
 		//Check to make sure that addresses is an Array instance
 		if(!(addresses instanceof Array)) {
-			//Error!!
+			throw new DriverInterfaceError("Addresses must be type Array");
+			return "Addresses must be type Array";
 		}
 
 		//Get important info & allocate argument variables
@@ -825,7 +849,8 @@ exports.labjack = function ()
 		var output;
 
 		if(length < 1) {
-			//Error!!
+			throw new DriverInterfaceError("Addresses array must contain data");
+			return "Addresses array must contain data";
 		}
 		if(typeof(addresses[0]) == 'string') {
 			var i;
@@ -864,15 +889,22 @@ exports.labjack = function ()
 				}
 				else
 				{
-					if(useCallBacks)
-					{
-						onError("Invalid Address: "+addresses[i]+", Index: "+i);
-						return driver_const.LJME_INVALID_ADDRESS;
+					if(info.type == -1) {
+						throw new DriverInterfaceError(
+							{
+								retError:"Invalid Address", 
+								errFrame:i
+							}
+						);
+					} else if (info.directionValid == 0) {
+						throw new DriverInterfaceError(
+							{
+								retError:"Invalid Read Attempt", 
+								errFrame:i
+							}
+						);
 					}
-					else
-					{
-						throw new DriverInterfaceError("Invalid address");
-					}
+					return {retError:"Invalid Address", errFrame:i};
 				}
 			}
 
@@ -896,11 +928,101 @@ exports.labjack = function ()
 			}
 			return returnResults;
 		} else {
-			return {retError:res, errFrame:errors.deref()};
+			throw new DriverInterfaceError(
+				{
+					retError:errorResult, 
+					errFrame:errors.deref()
+				}
+			);
+			return {retError:errorResult, errFrame:errors.deref()};
 		}
 		return 0;
 	}
 
+	/**
+	 * This function performs an asynchronous writeRaw LJM function.
+	 * 
+	 * @param  {[type]} data      [description]
+	 * @param  {[type]} onError   [description]
+	 * @param  {[type]} onSuccess [description]
+	 * @return {[type]}           [description]
+	 */
+	this.writeRaw = function(data, onError, onSuccess) {
+		//Check to make sure a device has been opened
+		this.checkStatus();
+
+		if(!(data instanceof Array)) {
+			console.log('WriteRaw-Err, data not an array');
+		}
+		if(data[0] != "number") {
+			console.log('WriteRaw-Err, data not a number-array');
+		}
+
+		var aData = new Buffer(data.length);
+		aData.fill(0);
+		for(var i = 0; i < data.length; i++) {
+			aData.writeUInt8(data[i], i);
+		}
+
+		errorResult = this.driver.LJM_WriteRaw.async(
+			this.handle, 
+			aData, 
+			data.length, 
+			function (err, res){
+				if(err) throw err;
+				if(res == 0) {
+					onSuccess(aData);
+				} else {
+					onError(res);
+				}
+			}
+		);
+	}
+
+	/**
+	 * This function performs an asynchronous writeRaw LJM function.
+	 * 
+	 * @param  {number-array} data      Data to be written to the device
+	 * @return {number-array}           Appropriate LJM result
+	 * @throws {DriverInterfaceError} If input args aren't correct
+	 * @throws {DriverOperationError} If an LJM error occurs
+	 */
+	this.writeRawSync = function(data) {
+		//Check to make sure a device has been opened
+		this.checkStatus();
+
+		if(!(data instanceof Array)) {
+			console.log('WriteRaw-Err, data not an array');
+		}
+		if(data[0] != "number") {
+			console.log('WriteRaw-Err, data not a number-array');
+		}
+
+		var aData = new Buffer(data.length);
+		aData.fill(0);
+		for(var i = 0; i < data.length; i++) {
+			aData.writeUInt8(data[i], i);
+		}
+
+		errorResult = this.driver.LJM_WriteRaw.async(
+			this.handle, 
+			aData, 
+			data.length, 
+			function (err, res){
+				if(err) throw err;
+				if(res == 0){ 
+					onSuccess(aData);
+				} else {
+					onError(res);
+				}
+			}
+		);
+		if(errorResult == 0) {
+			return aData;
+		} else {
+			throw new DriverInterfaceError(res);
+		}
+	}
 	/*
 	this.writeRaw = function(data)
 	{

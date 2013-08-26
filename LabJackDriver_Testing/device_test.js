@@ -51,9 +51,10 @@ module.exports = {
 	},
 	tearDown: function (callback) {
         // clean up
+        fakeDriver.setExpectedResult(0);
         if(autoClose) {
         	dev.close(function(res) {
-        		console.log("Err-Setup/Teardown!!!");
+        		console.log("Err-Setup/Teardown!!!",res);
         	},
         	function(res) {
         		fakeDriver.clearLastFunctionCall();
@@ -367,6 +368,79 @@ module.exports = {
 	},
 
 	/**
+	 * This test tests the LJM_eReadName, LJM_eReadAddress, LJM_eReadNameString,
+	 * and LJM_eReadAddressString asynchronous function calls of LJM. 
+	 * & makes sure that they properly return error codes.
+	 * @param  {[type]} test The test object.
+	 */
+	testReadFail: function(test) {
+		fakeDriver.setResultArg(testVal);
+
+		//Configure running-engines
+		asyncRun.config(dev,null);
+		syncRun.config(dev,null);
+
+		//Force the driver to produce an error code
+		var erCode = 1;
+		fakeDriver.setExpectedResult(erCode);
+
+		var testList = [
+		'read(-1)',//Test for invalid address
+		'read("AIN999")',//Test for invalid name
+		'read(49350)',//test for write only address-number read
+		'read("WIFI_PASSWORD_DEFAULT")',//Test for write only address-name read
+		'read(0)',
+		'read("AIN0")',
+		];
+		var expectedFunctionList = [ 
+			'LJM_eReadAddress',
+			'LJM_eReadName',
+			'LJM_eReadAddressAsync',
+			'LJM_eReadNameAsync',
+		];
+		var expectedResultList = [
+			'Invalid Address',
+			'Invalid Address',
+			'Invalid Read Attempt',
+			'Invalid Read Attempt',
+			erCode,
+			erCode,
+			'Invalid Address',
+			'Invalid Address',
+			'Invalid Read Attempt',
+			'Invalid Read Attempt',
+			erCode,
+			erCode,
+		];
+		syncRun.run(testList);
+		asyncRun.run(testList,
+			function(res) {
+				//Error, should never be called.... isn't ever used... woops....
+			}, function(res) {
+				//Success				
+				var funcs = fakeDriver.getLastFunctionCall();
+				var results = asyncRun.getResults();
+				var args = fakeDriver.getArgumentsList();
+				//console.log(args)
+				var i;
+
+				// console.log("Functions Called",funcs);
+				// console.log("Results",results);
+				//Test to make sure that the proper number of commands have been
+				//executed & results returned:
+				test.equal(funcs.length, expectedFunctionList.length);
+				test.equal(results.length, expectedResultList.length);
+
+				//Make sure that the proper LJM functions were called
+				for(i = 0; i < testList.length*2; i++) {
+					test.equal(results[i], expectedResultList[i]);
+				}
+
+				test.done();
+			});		
+	},
+
+	/**
 	 * This test tests the LJM_eReadNames, and LJM_eReadAddresses asynchronous 
 	 * function calls of LJM.
 	 * @param  {[type]} test The test object.
@@ -409,6 +483,11 @@ module.exports = {
 
 				//Figure out how many function calls should have been made:
 				var numDriverCalls = testList.length * 2;
+
+				//Test to make sure that the proper number of commands have been
+				//executed & results returned:
+				test.equal(funcs.length, expectedFunctionList.length);
+				test.equal(results.length, expectedResultList.length);
 
 				//Test to make sure that the expected driver calls is actually
 				//what happened:
@@ -457,8 +536,101 @@ module.exports = {
 	 * function calls of LJM and their methidologies for reporting errors.
 	 * @param  {[type]} test The test object.
 	 */
-	testReadManyFaiil: function(test) {
-		test.done();
+	testReadManyFail: function(test) {
+		var resArray = [testVal,testVal+1];
+		var numArgs = resArray.length;
+		fakeDriver.setResultArg(resArray);
+
+		//Force the driver to produce an error code
+		var erCode = 1;
+		fakeDriver.setExpectedResult(erCode);
+		
+		//Configure running-engines
+		asyncRun.config(dev, null);
+		syncRun.config(dev, null);
+
+		//Create test-variables
+		var testList = [
+			'readMany([-1,2])',
+			'readMany(["AI999","AIN1"])',
+			'readMany([0,49350])',
+			'readMany(["AIN0","WIFI_PASSWORD_DEFAULT"])',
+			'readMany([0,2])',
+			'readMany(["AIN0","AIN1"])',
+		];
+		//Expected info combines both sync & async
+		var expectedFunctionList = [ 
+			'LJM_eReadNames',
+			'LJM_eReadNames',
+			'LJM_eReadAddresses',
+			'LJM_eReadNames',
+			'LJM_eReadNamesAsync',
+			'LJM_eReadNamesAsync',
+			'LJM_eReadAddressesAsync',
+			'LJM_eReadNamesAsync',
+		];
+		//Expected info combines both sync & async
+		var expectedResultList = [
+			{ retError: 'Invalid Address', errFrame: 0 },
+			{ retError: erCode, errFrame: 99 },
+			{ retError: 'Invalid Read Attempt', errFrame: 1 },
+			{ retError: erCode, errFrame: 99 },
+			{ retError: erCode, errFrame: 99 },
+			{ retError: erCode, errFrame: 99 },
+			{ retError: 'Invalid Address', errFrame: 0 },
+			{ retError: erCode, errFrame: 99 },
+			{ retError: 'Invalid Read Attempt', errFrame: 1 },
+			{ retError: erCode, errFrame: 99 },
+			{ retError: erCode, errFrame: 99 },
+			{ retError: erCode, errFrame: 99 },
+		];
+
+		//Run the desired commands
+		syncRun.run(testList);
+		asyncRun.run(testList,
+			function(res) {
+				//Error
+			}, function(res) {
+				//Success
+				var funcs = fakeDriver.getLastFunctionCall();
+				var results = asyncRun.getResults();
+				var argList = fakeDriver.getArgumentsList();
+				var i,j;
+				var offsetSync = 1;
+
+				// console.log('Function Calls',funcs);
+				// console.log('Results',results);
+				// console.log('arguments',argList);
+				//Figure out how many function calls should have been made:
+				var numDriverCalls = testList.length * 2;
+
+				//Test to make sure that the proper number of commands have been
+				//executed & results returned:
+				test.equal(funcs.length, expectedFunctionList.length);
+				test.equal(results.length, expectedResultList.length);
+
+				//Test to make sure that the expected driver calls is actually
+				//what happened:
+				for(i = 0; i < funcs.length; i++) {
+					test.equal(funcs[i],expectedFunctionList[i]);
+				}
+
+				//Make sure that the errors are being returned properly & stored
+				//in the results array
+				for(i = 0; i < numDriverCalls; i++) {
+					test.equal(results[i] instanceof Object,true);
+					test.equal(
+						results[i].retError,
+						expectedResultList[i].retError
+					);
+					test.equal(
+						results[i].errFrame,
+						expectedResultList[i].errFrame
+					);
+				}				
+
+				test.done();
+			});	
 	},
 
 	/**
