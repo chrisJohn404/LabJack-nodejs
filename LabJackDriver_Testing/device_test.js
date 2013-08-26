@@ -59,6 +59,8 @@ module.exports = {
         		fakeDriver.clearLastFunctionCall();
         		fakeDriver.setExpectedResult(0);
         		fakeDriver.clearArgumentsList();
+        		asyncRun.clearResults();
+        		syncRun.clearResults();
         		callback();
         	});
         }
@@ -372,8 +374,8 @@ module.exports = {
 		fakeDriver.setResultArg(resArray);
 		asyncRun.config(dev,null);
 		var testList = [
-		'readMany([0,2])',
-		'readMany(["AIN0","AIN1"])',
+			'readMany([0,2])',
+			'readMany(["AIN0","AIN1"])',
 		];
 		var expectedFunctionList = [ 
 			'LJM_eReadAddressesAsync',
@@ -390,16 +392,29 @@ module.exports = {
 				//Success
 				var funcs = fakeDriver.getLastFunctionCall();
 				var results = asyncRun.getResults();
+				var argList = fakeDriver.getArgumentsList();
 				var i,j;
 				for(i = 0; i < testList.length; i++) {
 					for(j = 0; j < resArray.length; j++) {
 						test.equal(funcs[i][j], expectedFunctionList[i][j]);
 						test.equal(results[i][j], expectedResultList[i][j]);
 					}
+					if(expectedFunctionList[i] == 'LJM_eReadAddressesAsync') {
+						test.equal(argList[i+1][1], resArray.length);
+						test.equal(argList[i+1][2].length, resArray.length*4);
+						test.equal(argList[i+1][3].length, resArray.length*4);
+						test.equal(argList[i+1][4].length, resArray.length*8);
+						test.equal(argList[i+1][5].length, 4);
+					}
+					else if (expectedFunctionList[i] == 'LJM_eReadNamesAsync'){
+						test.equal(argList[i+1][1], resArray.length);
+						//test.equal(argList[i+1][2].length, resArray.length*4); Address
+						test.equal(argList[i+1][3].length, resArray.length*8);
+						test.equal(argList[i+1][4].length, 4);
+					}
 				}
 				test.done();
 			});	
-		test.done();
 	},
 
 	/**

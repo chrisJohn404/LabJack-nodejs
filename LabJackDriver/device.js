@@ -711,18 +711,15 @@ exports.labjack = function ()
 		if(length < 1) {
 			//Error!!
 		}
-		console.log("Before type-branch", addresses);
 		if(typeof(addresses[0]) == 'string') {
 			var i;
 			//ref: http://tootallnate.github.io/ref/
 			var aNames = new Buffer(8*length);
-			console.log("Building eReadNames data");
 			for(i = 0; i < length; i++) {
 				var buf = new Buffer(addresses[i].length+1);
 				ref.writeCString(buf,0,addresses[i]);
 				ref.writePointer(aNames,i*8,buf);
 			}
-			console.log("Calling eReadNames");
 			errorResult = this.ljm.LJM_eReadNames.async(
 				this.handle, 
 				length, 
@@ -752,7 +749,6 @@ exports.labjack = function ()
 			var info;
 			var offset=0;
 			i = 0;
-			console.log("Building eReadAddresses data");
 			for(i = 0; i < length; i++)
 			{
 				info = this.constants.getAddressInfo(addresses[i], 'R');
@@ -776,7 +772,6 @@ exports.labjack = function ()
 				}
 			}
 
-			console.log("Calling eReadAddresses");
 			errorResult = this.ljm.LJM_eReadAddresses.async(
 				this.handle, 
 				length, 

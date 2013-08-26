@@ -221,36 +221,49 @@ var LJM_eReadAddresses = createCallableObject(
 		if(addresses.length != types.length) {
 			console.log('ERROR!!!', numReads, types.length);
 		}
-		console.log(results.length);
-		console.log(results);
+		for(var i = 0; i < length; i++) {
+			results.writeDoubleLE(expectedResultArg[i],i*8);
+		}
+		return expectedResult;
 	},
 	function(handle, length, addresses, types, results, errors, callback) {
 		lastFunctionCall.push("LJM_eReadAddressesAsync");
 		argumentsList.push(arguments);
-		console.log(arguments);
 		var numReads = addresses.length;
 		if(addresses.length != types.length) {
 			console.log('ERROR!!!', numReads, types.length);
 		}
-		console.log(results.length);
-		console.log(results);
+		for(var i = 0; i < length; i++) {
+			results.writeDoubleLE(expectedResultArg[i],i*8);
+		}
 		reportEnd(callback);
 	});
 /**
  * Test-Function for Synchronous and Async Multiple-Operation functionality: 
  */
 var LJM_eReadNames = createCallableObject(
-	function(handle, addresses) {
+	function(handle, length, addresses, results, errors) {
 		lastFunctionCall.push("LJM_eReadNames");
 		argumentsList.push(arguments);
-		console.log(results.length);
-		console.log(results);
+		var numReads = addresses.length;
+		if(addresses.length != results.length) {
+			console.log('ERROR!!!', numReads, results.length);
+		}
+		for(var i = 0; i < length; i++) {
+			results.writeDoubleLE(expectedResultArg[i],i*8);
+		}
+		return expectedResult;
 	},
-	function(handle, addresses, callback) {
+	function(handle, length, addresses, results, errors, callback) {
 		lastFunctionCall.push("LJM_eReadNamesAsync");
 		argumentsList.push(arguments);
-		console.log(results.length);
-		console.log(results);
+		var numReads = addresses.length;
+		if(addresses.length != results.length) {
+			console.log('ERROR!!!', numReads, results.length);
+		}
+		for(var i = 0; i < length; i++) {
+			results.writeDoubleLE(expectedResultArg[i],i*8);
+		}
 		reportEnd(callback);
 	});
 

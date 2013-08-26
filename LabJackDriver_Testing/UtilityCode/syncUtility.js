@@ -89,3 +89,6 @@ exports.run = function(testList, printResults, printCommands) {
 exports.getResults = function() {
 	return results;
 };
+exports.clearResults = function() {
+	results = [];
+}

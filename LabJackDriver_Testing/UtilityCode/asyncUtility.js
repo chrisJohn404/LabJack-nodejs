@@ -107,3 +107,6 @@ exports.run = function(testList, onE, onS, printResults, printCommands) {
 exports.getResults = function() {
 	return results;
 };
+exports.clearResults = function() {
+	results = [];
+}
