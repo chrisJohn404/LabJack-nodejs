@@ -828,105 +828,23 @@ exports.labjack = function ()
 			//Error!!
 		}
 		if(typeof(addresses[0]) == 'string') {
-
-
-		} else if(typeof(addresses[0]) == 'number') {
-
-		} else {
-			//Error!! input arguments aren't of proper type.
-		}
-
-	}
-	/**
-	 * Function reads from multiple modbus addresses
-	 *
-	 * @params {number} addresses that you wish to read
-	 * @return {numbers} numbers that were read or appropriate error messages.
-	 * 		NOTE: As long as the error messages are out of range +-10 this is ok.
-	 */
-	/*
-	this.readMany = function(addresses)
-	{
-		this.checkStatus();
-
-		var ret = this.checkCallback(arguments);
-		var useCallBacks = ret[0];
-		var onError = ret[1];
-		var onSuccess = ret[2];
-
-		var length = addresses.length;
-
-		var returnResults = Array();
-		var results = new Buffer(8*length);
-		var errors = new ref.alloc('int',1);
-		errors[0]=0;
-
-		var errorResult;
-
-		if((typeof(addresses[0]))=="string")
-		{
-			//Create String Array for names
 			var i;
-			//var aNames = Array();
-			//var aNames = new Buffer(ref.sizeof.pointer * length); //50(maximum str. length) * numAddresses
-			//aNames[0] = new Buffer(addresses[0]);
-			//aNames[1] = new Buffer(addresses[1]);
-
 			//ref: http://tootallnate.github.io/ref/
 			var aNames = new Buffer(8*length);
-			for(i = 0; i < length; i++)
-			{
-				//console.log('Iteration: '+i);
+			for(i = 0; i < length; i++) {
 				var buf = new Buffer(addresses[i].length+1);
 				ref.writeCString(buf,0,addresses[i]);
-				//console.log('Data: '+buf);
 				ref.writePointer(aNames,i*8,buf);
 			}
-			
-			//console.log('Length: '+addresses.length);
-			//console.log('Length: '+addresses[0].length);
-			//console.log('Length: '+aNames.length);
-			//console.log('Data: '+ ref.readPointer(aNames,0));
-			
-			//console.log('Length: '+ref.readPointer(aNames,0,8);
-			//var t = new ffi.Array('string', length);
-			//Copy Strings into buffer
-			//for(i = 0; i < length; i++)
-			//{
-			//	aNames.writeUint32LE(addresses[i], i*4);
-			//}
-			if(useCallBacks)
-			{
-				errorResult = this.driver.LJM_eReadNames.async(this.handle, length, aNames, results, errors, function(err, res){
-					if(err) throw err;
-					var offset = 0;
-					for(i in addresses)
-					{
-						returnResults[i] = results.readDoubleLE(offset);
-						offset += 8;
-					}
-					if((res == 0))
-					{
-						onSuccess(returnResults);
-					}
-					else
-					{
-						onError({retError:res, errFrame:errors.deref()});
-					}
-				});
-				return 0;
-			}
-			else
-			{
-				errorResult = this.driver.LJM_eReadNames(this.handle, length, aNames, results, errors);
-			}
-			
+			errorResult = this.ljm.LJM_eReadNames(
+				this.handle, 
+				length, 
+				aNames, 
+				results, 
+				errors
+			);
 
-			//ref.refType('string'),			//aNames (Registers to read from)
-
-		}
-		else if((typeof(addresses[0]))=="number")
-		{
+		} else if(typeof(addresses[0]) == 'number') {
 			var addrBuff = new Buffer(4*length);
 			var addrTypeBuff = new Buffer(4*length);
 			var inValidOperation = 0;
@@ -935,7 +853,6 @@ exports.labjack = function ()
 			var info;
 			var offset=0;
 			i = 0;
-
 			for(i = 0; i < length; i++)
 			{
 				info = this.constants.getAddressInfo(addresses[i], 'R');
@@ -958,56 +875,31 @@ exports.labjack = function ()
 					}
 				}
 			}
-			if(useCallBacks)
-			{
-				errorResult = this.driver.LJM_eReadAddresses.async(this.handle, length, addrBuff, addrTypeBuff, results, errors, function(err, res){
-					if(err) throw err;
-					var offset = 0;
-					for(i in addresses)
-					{
-						returnResults[i] = results.readDoubleLE(offset);
-						offset += 8;
-					}
-					if((res == 0))
-					{
-						onSuccess(returnResults);
-					}
-					else
-					{
-						onError({retError:res, errFrame:errors.deref()});
-					}
-				});
-				return 0;
-			}
-			else
-			{
-				//Perform Device I/O function
-				errorResult = this.driver.LJM_eReadAddresses(this.handle, length, addrBuff, addrTypeBuff, results, errors);
-			}
+
+			errorResult = this.ljm.LJM_eReadAddresses(
+				this.handle, 
+				length, 
+				addrBuff, 
+				addrTypeBuff, 
+				results, 
+				errors
+			);
+		} else {
+			//Error!! input arguments aren't of proper type.
 		}
-		else
-		{
-			throw new DriverInterfaceError("Invalid address type.");
-		}
-		if(errorResult == 0)
-		{
-			//return Result
+		if(errorResult == 0) {
+			var i;
 			var offset = 0;
-			for(i in addresses)
-			{
+			for(i in addresses) {
 				returnResults[i] = results.readDoubleLE(offset);
 				offset += 8;
 			}
 			return returnResults;
+		} else {
+			return {retError:res, errFrame:errors.deref()};
 		}
-		else
-		{
-			//return Error
-			//throw new DriverOperationError(errorResult);
-			return {retError:errorResult, errFrame:errors.deref()}
-		}
-	};
-	*/
+		return 0;
+	}
 
 	/*
 	this.writeRaw = function(data)

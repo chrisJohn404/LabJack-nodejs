@@ -68,6 +68,8 @@ module.exports = {
         	fakeDriver.clearLastFunctionCall();
         	fakeDriver.clearArgumentsList();
         	fakeDriver.setExpectedResult(0);
+        	asyncRun.clearResults();
+    		syncRun.clearResults();
         	callback();
         }
     },
@@ -350,7 +352,7 @@ module.exports = {
 				var args = fakeDriver.getArgumentsList();
 				//console.log(args)
 				var i;
-				for(i = 0; i < testList.length; i++) {
+				for(i = 0; i < testList.length*2; i++) {
 					test.equal(funcs[i], expectedFunctionList[i]);
 					test.equal(results[i], expectedResultList[i]);
 				}
@@ -371,20 +373,29 @@ module.exports = {
 	 */
 	testReadMany: function(test) {
 		var resArray = [testVal,testVal+1];
+		var numArgs = resArray.length;
 		fakeDriver.setResultArg(resArray);
 		asyncRun.config(dev,null);
+		syncRun.config(dev,null);
 		var testList = [
 			'readMany([0,2])',
 			'readMany(["AIN0","AIN1"])',
 		];
+		//Expected info combines both sync & async
 		var expectedFunctionList = [ 
+			'LJM_eReadAddresses',
+			'LJM_eReadNames',
 			'LJM_eReadAddressesAsync',
 			'LJM_eReadNamesAsync',
 		];
+		//Expected info combines both sync & async
 		var expectedResultList = [
 			resArray,
 			resArray,
+			resArray,
+			resArray,
 		];
+		syncRun.run(testList);
 		asyncRun.run(testList,
 			function(res) {
 				//Error
@@ -394,27 +405,60 @@ module.exports = {
 				var results = asyncRun.getResults();
 				var argList = fakeDriver.getArgumentsList();
 				var i,j;
-				for(i = 0; i < testList.length; i++) {
+				var offsetSync = 1;
+
+				//Figure out how many function calls should have been made:
+				var numDriverCalls = testList.length * 2;
+
+				//Test to make sure that the expected driver calls is actually
+				//what happened:
+				for(i = 0; i < numDriverCalls; i++) {
+					test.equal(funcs[i],expectedFunctionList[i]);
+				}
+
+				//Test to make sure that the proper results came back for each 
+				//call starting with sync then async
+				for(i = 0; i < numDriverCalls; i++) {
 					for(j = 0; j < resArray.length; j++) {
-						test.equal(funcs[i][j], expectedFunctionList[i][j]);
-						test.equal(results[i][j], expectedResultList[i][j]);
+						test.equal(results[i][j],expectedResultList[i][j]);
 					}
+				}
+
+				//Test to make sure that each function got passed the proper 
+				//arguments
+				for(i = 0; i < numDriverCalls; i++) {
 					if(expectedFunctionList[i] == 'LJM_eReadAddressesAsync') {
-						test.equal(argList[i+1][1], resArray.length);
-						test.equal(argList[i+1][2].length, resArray.length*4);
-						test.equal(argList[i+1][3].length, resArray.length*4);
-						test.equal(argList[i+1][4].length, resArray.length*8);
-						test.equal(argList[i+1][5].length, 4);
-					}
-					else if (expectedFunctionList[i] == 'LJM_eReadNamesAsync'){
-						test.equal(argList[i+1][1], resArray.length);
-						//test.equal(argList[i+1][2].length, resArray.length*4); Address
-						test.equal(argList[i+1][3].length, resArray.length*8);
-						test.equal(argList[i+1][4].length, 4);
+						test.equal(argList[i+offsetSync][1], numArgs);
+						test.equal(argList[i+offsetSync][2].length, numArgs*4);
+						test.equal(argList[i+offsetSync][3].length, numArgs*4);
+						test.equal(argList[i+offsetSync][4].length, numArgs*8);
+						test.equal(argList[i+offsetSync][5].length, 4);
+					} else if(expectedFunctionList[i] == 'LJM_eReadNamesAsync'){
+						test.equal(argList[i+offsetSync][1], numArgs);
+						test.equal(argList[i+offsetSync][3].length, numArgs*8);
+						test.equal(argList[i+offsetSync][4].length, 4);
+					} else if(expectedFunctionList[i] == 'LJM_eReadAddresses') {
+						test.equal(argList[i+offsetSync][1], numArgs);
+						test.equal(argList[i+offsetSync][2].length, numArgs*4);
+						test.equal(argList[i+offsetSync][3].length, numArgs*4);
+						test.equal(argList[i+offsetSync][4].length, numArgs*8);
+						test.equal(argList[i+offsetSync][5].length, 4);
+					} else if (expectedFunctionList[i] == 'LJM_eReadNames'){
+						test.equal(argList[i+offsetSync][1], numArgs);
+						test.equal(argList[i+offsetSync][3].length, numArgs*8);
+						test.equal(argList[i+offsetSync][4].length, 4);
 					}
 				}
 				test.done();
 			});	
+	},
+	/**
+	 * This test tests the LJM_eReadNames, and LJM_eReadAddresses asynchronous 
+	 * function calls of LJM and their methidologies for reporting errors.
+	 * @param  {[type]} test The test object.
+	 */
+	testReadManyFaiil: function(test) {
+		test.done();
 	},
 
 	/**
