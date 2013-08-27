@@ -711,6 +711,7 @@ exports.labjack = function ()
 	 * @param  {number/string array} 	addresses 	The addresses to read
 	 * @param  {function} 				onError 	Error-callback
 	 * @param  {function} 				onSuccess 	Successful-callback
+	 * @throws {DriverInterfaceError} If input args aren't correct
 	 */
 	this.readMany = function(addresses, onError, onSuccess) {
 		//Check to make sure a device has been opened
@@ -815,7 +816,8 @@ exports.labjack = function ()
 			);
 		} else {
 			//Error!! input arguments aren't of proper type.
-			console.log("ERROR! NO-VALID-Type");
+			onError("Invalid Arguments");
+			//console.log("ERROR! NO-VALID-Type");
 		}
 
 	}
@@ -918,6 +920,7 @@ exports.labjack = function ()
 			);
 		} else {
 			//Error!! input arguments aren't of proper type.
+			throw new DriverInterfaceError("Invalid Arguments");
 		}
 		if(errorResult == 0) {
 			var i;
@@ -954,7 +957,7 @@ exports.labjack = function ()
 		if(!(data instanceof Array)) {
 			console.log('WriteRaw-Err, data not an array');
 		}
-		if(data[0] != "number") {
+		if(typeof(data[0]) != "number") {
 			console.log('WriteRaw-Err, data not a number-array');
 		}
 
@@ -964,7 +967,7 @@ exports.labjack = function ()
 			aData.writeUInt8(data[i], i);
 		}
 
-		errorResult = this.driver.LJM_WriteRaw.async(
+		errorResult = this.ljm.LJM_WriteRaw.async(
 			this.handle, 
 			aData, 
 			data.length, 
@@ -980,7 +983,7 @@ exports.labjack = function ()
 	}
 
 	/**
-	 * This function performs an asynchronous writeRaw LJM function.
+	 * This function performs an synchronous writeRaw LJM function.
 	 * 
 	 * @param  {number-array} data      Data to be written to the device
 	 * @return {number-array}           Appropriate LJM result
@@ -994,7 +997,7 @@ exports.labjack = function ()
 		if(!(data instanceof Array)) {
 			console.log('WriteRaw-Err, data not an array');
 		}
-		if(data[0] != "number") {
+		if(typeof(data[0]) != "number") {
 			console.log('WriteRaw-Err, data not a number-array');
 		}
 
@@ -1004,18 +1007,10 @@ exports.labjack = function ()
 			aData.writeUInt8(data[i], i);
 		}
 
-		errorResult = this.driver.LJM_WriteRaw.async(
+		errorResult = this.ljm.LJM_WriteRaw(
 			this.handle, 
 			aData, 
-			data.length, 
-			function (err, res){
-				if(err) throw err;
-				if(res == 0){ 
-					onSuccess(aData);
-				} else {
-					onError(res);
-				}
-			}
+			data.length
 		);
 		if(errorResult == 0) {
 			return aData;
@@ -1023,297 +1018,239 @@ exports.labjack = function ()
 			throw new DriverInterfaceError(res);
 		}
 	}
-	/*
-	this.writeRaw = function(data)
-	{
+
+	/**
+	 * Function performs an asynchronous write command using either the 
+	 * LJM_eWriteName, LJM_eWriteAddress, LJM_eWriteNameString, or 
+	 * LJM_eWriteAddressString function.
+	 * 
+	 * @param  {string/number} address   The address being written to
+	 * @param  {string/number} value     The data being written to the address
+	 * @param  {function} onError   Function called when an error occurs.
+	 * @param  {function} onSuccess Function called upon finishing successfully.
+	 */
+	this.write = function(address, value, onError, onSuccess) {
+		//Check to make sure a device has been opened
 		this.checkStatus();
 
-		var ret = this.checkCallback(arguments);
-		var useCallBacks = ret[0];
-		var onError = ret[1];
-		var onSuccess = ret[2];
+		//Decision making for address type (string or number)
+		if(typeof(address) == 'string') {
+			var info = this.constants.getAddressInfo(address, 'W');
+
+			//Decision making for LJM-address return type, number or string
+			if((info.directionValid == 1) && (info.type != 98)) {
+				//Execute LJM command
+				errorResult = this.ljm.LJM_eWriteName.async(
+					this.handle, 
+					address, 
+					value, 
+					function(err, res){
+						if(err) throw err;
+						if(res == 0)
+						{
+							onSuccess();
+						}
+						else
+						{
+							onError(res);
+						}
+					}
+				);
+				return 0;
+			} else if((info.directionValid == 1) && (info.type == 98)) {
+				//Allocate space for the string to be written
+				var strBuffer = new Buffer(50);//max string size
+				strBuffer.fill(0);
+
+				//Fill the write-string
+				strBuffer.write(value, 0, value.length, 'utf8');
+
+				//Execute LJM command
+				errorResult = this.ljm.LJM_eWriteNameString.async(
+					this.handle, 
+					address,
+					strBuffer, 
+					function(err, res){
+						if (err) throw err;
+						if(res == 0)
+						{
+							onSuccess();
+						}
+						else
+						{
+							onError(res);
+						}
+					}
+				);
+				return 0;
+			} else {
+				//ERROR!! address is not valid, wrong direction or invalid addr.
+				if(info.type == -1) {
+					onError("Invalid Address");
+				} else if (info.directionValid == 0) {
+					onError("Invalid Write Attempt");
+				}
+			}
+		} else if(typeof(address) == 'number') {
+			var info = this.constants.getAddressInfo(address, 'W');
+			if((info.directionValid == 1) && (info.type != 98)) {
+				//Execute LJM command
+				errorResult = this.ljm.LJM_eWriteAddress.async(
+					this.handle, 
+					address, 
+					info.type, 
+					value, 
+					function(err, res){
+						if(err) throw err;
+						if(res == 0)
+						{
+							onSuccess();
+						}
+						else
+						{
+							onError(res);
+						}
+					}
+				);
+				return 0;
+			} else if((info.directionValid == 1) && (info.type == 98)) {
+				//Allocate space for the string to be written
+				var strBuffer = new Buffer(50);//max string size
+				strBuffer.fill(0);
+
+				//Fill the write-string
+				strBuffer.write(value, 0, value.length, 'utf8');
+
+				//Execute LJM command
+				errorResult = this.ljm.LJM_eWriteAddressString.async(
+					this.handle, 
+					address,
+					strBuffer, 
+					function(err, res){
+						if (err) throw err;
+						if(res == 0)
+						{
+							onSuccess();
+						}
+						else
+						{
+							onError(res);
+						}
+					}
+				);
+				return 0;
+			} else {
+				//ERROR!! address is not valid, wrong direction or invalid addr.
+				if(info.type == -1) {
+					onError("Invalid Address");
+				} else if (info.directionValid == 0) {
+					onError("Invalid Write Attempt");
+				}
+			}
+		} else {
+			onError("Invalid Arguments");
+		}
+	}
+	/**
+	 * Function performs a synchronous write command using either the 
+	 * LJM_eWriteName, LJM_eWriteAddress, LJM_eWriteNameString, or 
+	 * LJM_eWriteAddressString function.
+	 * 
+	 * @param  {string/number} address The address being written to
+	 * @param  {string/number} value   The data being written to the address
+	 * @return {string/number}         on success, will return 0, on error a 
+	 *                                 number or string
+	 * @throws {DriverInterfaceError} If an error has been detected before 
+	 *         						  calling the LJM function.
+	 * @throws {DriverOperationError} If LJM reports an error has occured.
+	 */
+	this.writeSync = function(address, value) {
+		//Check to make sure a device has been opened
+		this.checkStatus();
 
 		var errorResult;
-		try
-		{
-			if(data[0] != "number")
-			{
-				return -1;
-			}
-		}
-		catch (e)
-		{
-			return -1;
-		}
-		var aData = new Buffer(data.length);
-		aData.fill(0);
-		for(var i = 0; i < data.length; i++)
-		{
-			aData.writeUInt8(data[i], i);
-		}
 
-		if(useCallBacks)
-		{
-			errorResult = this.driver.LJM_WriteRaw.async(this.handle, aData, data.length, function (err, res){
-				if(err) throw err;
-				if(res == 0)
-				{
-					onSuccess(aData);
+		//Decision making for address type (string or number)
+		if(typeof(address) == 'string') {
+			var info = this.constants.getAddressInfo(address, 'W');
+			
+			//Decision making for LJM-address return type, number or string
+			if((info.directionValid == 1) && (info.type != 98)) {
+				//Execute LJM command
+				errorResult = this.ljm.LJM_eWriteName(
+					this.handle, 
+					address, 
+					value
+				);
+			} else if((info.directionValid == 1) && (info.type == 98)) {
+				//Allocate space for the string to be written
+				var strBuffer = new Buffer(50);//max string size
+				strBuffer.fill(0);
+
+				//Fill the write-string
+				strBuffer.write(value, 0, value.length, 'utf8');
+
+				//Execute LJM command
+				errorResult = this.ljm.LJM_eWriteNameString(
+					this.handle, 
+					address,
+					strBuffer
+				);
+			} else {
+				//ERROR!! address is not valid, wrong direction or invalid addr.
+				if(info.type == -1) {
+					throw new DriverInterfaceError("Invalid Address");
+					return "Invalid Address";
+				} else if (info.directionValid == 0) {
+					throw new DriverInterfaceError("Invalid Write Attempt");
+					return "Invalid Write Attempt";
 				}
-				else
-				{
-					onError(res);
+			}
+		} else if(typeof(address) == 'number') {
+			var info = this.constants.getAddressInfo(address, 'W');
+			if((info.directionValid == 1) && (info.type != 98)) {
+				//Execute LJM command
+				errorResult = this.ljm.LJM_eWriteAddress(
+					this.handle, 
+					address, 
+					info.type, 
+					value
+				);
+			} else if((info.directionValid == 1) && (info.type == 98)) {
+				//Allocate space for the string to be written
+				var strBuffer = new Buffer(50);//max string size
+				strBuffer.fill(0);
+
+				//Fill the write-string
+				strBuffer.write(value, 0, value.length, 'utf8');
+
+				//Execute LJM command
+				errorResult = this.ljm.LJM_eWriteAddressString(
+					this.handle, 
+					address,
+					strBuffer
+				);
+			} else {
+				//ERROR!! address is not valid, wrong direction or invalid addr.
+				if(info.type == -1) {
+					throw new DriverInterfaceError("Invalid Address");
+					return "Invalid Address";
+				} else if (info.directionValid == 0) {
+					throw new DriverInterfaceError("Invalid Write Attempt");
+					return "Invalid Write Attempt";
 				}
-			});
-			return 0;
+			}
+		} else {
+			throw new DriverInterfaceError("Invalid Arguments");
+			return "Invalid Arguments";
 		}
-		else
-		{
-			errorResult = this.driver.LJM_WriteRaw(this.handle, aData, data.length);
-		}
-		if(errorResult != 0)
-		{
+		if(errorResult == 0) {
+			return errorResult;
+		} else {
+			throw new DriverOperationError(errorResult);
 			return errorResult;
 		}
-		return 0;
 	}
-	*/
-	/**
-	 * Function writes to a single modbus address
-	 *
-	 * @params {number} address that you wish to read
-	 * @params {number} value that you wish to write
-	 * @return {number} number that was read or an error message
-	 * 		NOTE: As long as the error messages are out of range +-10 this is ok.
-	 */
-	/*
-	this.write = function(address, value)
-	{
-		this.checkStatus();
-		var ret = this.checkCallback(arguments);
-		var useCallBacks = ret[0];
-		var onError = ret[1];
-		var onSuccess = ret[2];
-
-		var errorResult;
-
-		if((typeof(address))=="string")
-		{
-			var info = this.constants.getAddressInfo(address, 'W');
-			if((info.directionValid == 1) && (info.type != 98))
-			{
-				if(useCallBacks)
-				{
-					errorResult = this.driver.LJM_eWriteName.async(this.handle, address, value, function(err, res){
-						if(err) throw err;
-						if(res == 0)
-						{
-							onSuccess();
-						}
-						else
-						{
-							onError(res);
-						}
-					});
-					return 0;
-				}
-				else
-				{
-					errorResult = this.driver.LJM_eWriteName(this.handle, address, value);
-				}
-			}
-			else if((info.directionValid == 1) && (info.type == 98))
-			{
-				if(useCallBacks)
-				{
-					errorResult = this.writeS(address, value, onError, onSuccess);
-					return 0;
-				}
-				else
-				{
-					return this.writeS(address, value);
-				}
-			}
-			else
-			{
-				if(useCallBacks)
-				{
-					onError("Invalid Address");
-					return driver_const.LJME_INVALID_ADDRESS;
-				}
-				else
-				{
-					throw new DriverInterfaceError("Invalid address");
-				}
-			}
-		}
-		else if((typeof(address))=="number")
-		{
-			//Get information necessary type-info about the address requested
-			var info = this.constants.getAddressInfo(address, 'W');
-			if((info.directionValid == 1) && (info.type != 98))
-			{
-				if(useCallBacks)
-				{
-					errorResult = this.driver.LJM_eWriteAddress.async(this.handle, address, info.type, value, function(err, res){
-						if(err) throw err;
-						if(res == 0)
-						{
-							onSuccess();
-						}
-						else
-						{
-							onError(res);
-						}
-					});
-					return 0;
-				}
-				else
-				{
-					//According to LabJackM.h: int Handle, int Address, int Type, double * Value
-					errorResult = this.driver.LJM_eWriteAddress(this.handle, address, info.type, value);
-				}
-			}
-			else if((info.directionValid == 1) && (info.type == 98))
-			{
-				if(useCallBacks)
-				{
-					errorResult = this.writeS(address, value, onError, onSuccess);
-					return 0;
-				}
-				else
-				{
-					return this.writeS(address, value);
-				}
-			}
-			else
-			{
-				if(useCallBacks)
-				{
-					onError("Invalid Address");
-					return driver_const.LJME_INVALID_ADDRESS;
-				}
-				else
-				{
-					throw new DriverInterfaceError("Invalid address");
-				}
-			}
-		}
-		else
-		{
-			throw new DriverInterfaceError("Invalid address type.");
-		}
-		//Check for an error from driver & throw error
-		if(errorResult != 0)
-		{
-			throw new DriverOperationError(errorResult);
-		}
-		//Return the value written to the labjack device
-		return errorResult;
-	};
-	*/
-	/**
-	 * Function reads a single string-based modbus address
-	 *
-	 * @params {number/string} address that you wish to read
-	 * @params {string} the string to be written
-	 * @return {number} 0 if successful, error message if not
-	 * 		NOTE: As long as the error messages are out of range +-10 this is ok.
-	 */
-	/*
-	this.writeS = function(address, strIn)
-	{
-		this.checkStatus();
-
-		var ret = this.checkCallback(arguments);
-		var useCallBacks = ret[0];
-		var onError = ret[1];
-		var onSuccess = ret[2];
-
-		var errorResult;
-		var strBuffer = new Buffer(50);//max string size
-		strBuffer.fill(0);
-		strBuffer.write(strIn, 0, strIn.length, 'utf8');
-		if((typeof(address))=="string")
-		{
-			if(useCallBacks)
-			{
-				errorResult = this.driver.LJM_eWriteNameString.async(this.handle, address,strBuffer, function(err, res){
-					if (err) throw err;
-					if(res == 0)
-					{
-						//console.log('Length: '+strBuffer.length);
-						//console.log('Ans: '+strBuffer.toString());
-						//Calculate the size of the string...
-						var i = 0;
-						while(strBuffer[i] != 0)
-						{
-							i++;
-						}
-						//console.log(strBuffer.toString('utf8',0,i).length);
-						onSuccess();
-					}
-					else
-					{
-						onError(res);
-					}
-				});
-				return 0;
-			}
-			else
-			{
-				errorResult = this.driver.LJM_eWriteNameString(this.handle, address, strBuffer);
-			}
-		}
-		else if((typeof(address))=="number")
-		{
-			if(useCallBacks)
-			{
-				errorResult = this.driver.LJM_eWriteAddressString.async(this.handle, address, strBuffer, function(err, res){
-					if (err) throw err;
-					if(res == 0)
-					{
-						//console.log('Length: '+strBuffer.length);
-						//console.log('Ans: '+strBuffer.toString());
-						//Calculate the size of the string...
-						var i = 0;
-						while(strBuffer[i] != 0)
-						{
-							i++;
-						}
-						//console.log(strBuffer.toString('utf8',0,i).length);
-						onSuccess();
-					}
-					else
-					{
-						onError(res);
-					}
-				});
-				return 0;
-			}
-			else
-			{
-				errorResult = this.driver.LJM_eWriteAddressString(this.handle, address, strBuffer);
-			}
-		}
-		else
-		{
-			throw new DriverInterfaceError("Invalid address type.");
-		}
-		//Check for an error from driver & throw error
-		if(errorResult != 0)
-		{
-			throw new DriverOperationError(errorResult);
-		}
-		var i = 0;
-		while(strBuffer[i] != 0)
-		{
-			i++;
-		}
-		//return strBuffer.toString('utf8',0,i);
-		return 0;
-	}
-	*/
 
 	/**
 	 * Function writes to multiple modbus addresses

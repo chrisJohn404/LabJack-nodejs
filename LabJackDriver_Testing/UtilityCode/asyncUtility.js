@@ -30,12 +30,16 @@ var nextStep = function() {
 	wait=false;
 };
 var onSuccess = function(res) {
-	results.push(res);
+	if(res != null) {
+		results.push(res);
+	} else {
+		results.push('SUCCESS');
+	}
 	if(pRes) {
 		if(res != null) {
 			console.log(res);
 		} else {
-			console.log('SUCCESS');
+			console.log('Sync-ERROR:');
 		}
 	}
 	nextStep();

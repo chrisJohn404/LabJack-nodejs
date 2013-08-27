@@ -287,25 +287,43 @@ var LJM_eReadNames = createCallableObject(
  * Test-Function for Synchronous and Async Raw functionality: 
  */
 var LJM_WriteRaw = createCallableObject(
-	function(handle) {
+	function(handle, aData, numBytes) {
 		lastFunctionCall.push("LJM_WriteRaw");
 		argumentsList.push(arguments);
+
+		//Clear write-array:
+		aData.fill(0);
+		
+		//Fill it with the desired data
+		for(var i = 0; i < numBytes; i++) {
+			aData.writeUInt8(expectedResultArg[i],i);
+		}
+		return expectedResult;
 	},
-	function(handle, callback) {
+	function(handle, aData, numBytes, callback) {
 		lastFunctionCall.push("LJM_WriteRawAsync");
 		argumentsList.push(arguments);
+
+		//Clear write-array:
+		aData.fill(0);
+		
+		//Fill it with the desired data
+		for(var i = 0; i < numBytes; i++) {
+			aData.writeUInt8(expectedResultArg[i],i);
+		}
 		reportEnd(callback);
 	});
 /**
  * Test-Function for Synchronous and Async Single operation functionality: 
  */
 var LJM_eWriteAddress = createCallableObject(
-	function(handle) {
-		lastFunctionCall.push("LWriteAddress");
+	function(handle, address, type, value) {
+		lastFunctionCall.push("LJM_eWriteAddress");
 		argumentsList.push(arguments);
+		return expectedResult;
 	},
-	function(handle, callback) {
-		lastFunctionCall.push("LWriteAddressAsync");
+	function(handle, address, type, value, callback) {
+		lastFunctionCall.push("LJM_eWriteAddressAsync");
 		argumentsList.push(arguments);
 		reportEnd(callback);
 	});
@@ -313,11 +331,12 @@ var LJM_eWriteAddress = createCallableObject(
  * Test-Function for Synchronous and Async Single operation functionality: 
  */
 var LJM_eWriteName = createCallableObject(
-	function(handle) {
+	function(handle, address, value) {
 		lastFunctionCall.push("LJM_eWriteName");
 		argumentsList.push(arguments);
+		return expectedResult;
 	},
-	function(handle, callback) {
+	function(handle, address, value, callback) {
 		lastFunctionCall.push("LJM_eWriteNameAsync");
 		argumentsList.push(arguments);
 		reportEnd(callback);
@@ -326,11 +345,12 @@ var LJM_eWriteName = createCallableObject(
  * Test-Function for Synchronous and Async Single operation functionality: 
  */
 var LJM_eWriteAddressString = createCallableObject(
-	function(handle) {
+	function(handle, address, strBuffer) {
 		lastFunctionCall.push("LJM_eWriteAddressString");
 		argumentsList.push(arguments);
+		return expectedResult;
 	},
-	function(handle, callback) {
+	function(handle, address, strBuffer, callback) {
 		lastFunctionCall.push("LJM_eWriteAddressStringAsync");
 		argumentsList.push(arguments);
 		reportEnd(callback);
@@ -339,11 +359,12 @@ var LJM_eWriteAddressString = createCallableObject(
  * Test-Function for Synchronous and Async Single operation functionality: 
  */
 var LJM_eWriteNameString = createCallableObject(
-	function(handle) {
+	function(handle, address, strBuffer) {
 		lastFunctionCall.push("LJM_eWriteNameString");
 		argumentsList.push(arguments);
+		return expectedResult;
 	},
-	function(handle, callback) {
+	function(handle, address, strBuffer, callback) {
 		lastFunctionCall.push("LJM_eWriteNameStringAsync");
 		argumentsList.push(arguments);
 		reportEnd(callback);
@@ -355,6 +376,7 @@ var LJM_eWriteAddresses = createCallableObject(
 	function(handle) {
 		lastFunctionCall.push("LJM_eWriteAddresses");
 		argumentsList.push(arguments);
+		return expectedResult;
 	},
 	function(handle, callback) {
 		lastFunctionCall.push("LJM_eWriteAddressesAsync");
@@ -368,6 +390,7 @@ var LJM_eWriteNames = createCallableObject(
 	function(handle) {
 		lastFunctionCall.push("LJM_eWriteNames");
 		argumentsList.push(arguments);
+		return expectedResult;
 	},
 	function(handle, callback) {
 		lastFunctionCall.push("LJM_eWriteNamesAsync");

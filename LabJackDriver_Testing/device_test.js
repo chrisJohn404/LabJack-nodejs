@@ -317,10 +317,10 @@ module.exports = {
 		asyncRun.config(dev,null);
 		syncRun.config(dev,null);
 		var testList = [
-		'read(0)',
-		'read("AIN0")',
-		'read(60500)',
-		'read("DEVICE_NAME_DEFAULT")'
+			'read(0)',
+			'read("AIN0")',
+			'read(60500)',
+			'read("DEVICE_NAME_DEFAULT")'
 		];
 		var expectedFunctionList = [ 
 			'LJM_eReadAddress',
@@ -638,7 +638,58 @@ module.exports = {
 	 * @param  {[type]} test The test object.
 	 */
 	testWriteRaw: function(test) {
-		test.done();
+		var resArray = [9,8,7,6,5,4,3,2,1];
+		fakeDriver.setResultArg(resArray);
+		
+		//Configure running-engines
+		asyncRun.config(dev, null);
+		syncRun.config(dev, null);
+
+		//Create test-variables
+		var testList = [
+			'writeRaw([1,2,3,4,5,6,7,8,9])',
+		];
+		//Expected info combines both sync & async
+		var expectedFunctionList = [ 
+			'LJM_WriteRaw',
+			'LJM_WriteRawAsync',
+		];
+		//Expected info combines both sync & async
+		var expectedResultList = [
+			resArray,
+			resArray,
+		];
+
+		//Run the desired commands
+		syncRun.run(testList);
+		asyncRun.run(testList,
+			function(res) {
+				//Error
+			}, function(res) {
+				//Success
+				var funcs = fakeDriver.getLastFunctionCall();
+				var results = asyncRun.getResults();
+				var argList = fakeDriver.getArgumentsList();
+				var i,j;
+				var offsetSync = 1;		
+
+				// console.log("Function Calls", funcs);
+				// console.log("Results",results);
+				// console.log("Arguments",argList);
+
+				//Make sure we called the proper test-driver functions
+				for(i = 0; i < expectedFunctionList.length; i++) {
+					test.equal(expectedFunctionList[i],funcs[i]);
+				}
+
+				//Make sure the results array's are what we expected
+				for(i = 0; i < expectedResultList.length; i++) {
+					for(j = 0; j < expectedResultList[i].length; j++) {
+						test.equal(expectedResultList[i][j],results[i][j]);
+					}
+				}
+				test.done();
+			});	
 	},
 
 	/**
@@ -647,9 +698,160 @@ module.exports = {
 	 * calls of LJM.
 	 * @param  {[type]} test The test object.
 	 */
-	testWrite: function(test) {
-		test.done();
+	testWrite: function(test) {		
+		//Configure running-engines
+		asyncRun.config(dev, null);
+		syncRun.config(dev, null);
+
+		//Create test-variables
+		var testList = [
+			'write(1000,2.5)',
+			'write("DAC0",2.5)',
+			'write(60500,"Mine")',
+			'write("DEVICE_NAME_DEFAULT","Mine")'
+		];
+		//Expected info combines both sync & async
+		var expectedFunctionList = [ 
+			'LJM_eWriteAddress',
+			'LJM_eWriteName',
+			'LJM_eWriteAddressString',
+			'LJM_eWriteNameString',
+
+			'LJM_eWriteAddressAsync',
+			'LJM_eWriteNameAsync',
+			'LJM_eWriteAddressStringAsync',
+			'LJM_eWriteNameStringAsync',
+		];
+		//Expected info combines both sync & async
+		var expectedResultList = [
+			0,0,0,0,									//Return vars for sync
+			'SUCCESS','SUCCESS','SUCCESS','SUCCESS',	//Return vars for async
+		];
+
+		//Run the desired commands
+		syncRun.run(testList);
+		asyncRun.run(testList,
+			function(res) {
+				//Error
+			}, function(res) {
+				//Success
+				var funcs = fakeDriver.getLastFunctionCall();
+				var results = asyncRun.getResults();
+				var argList = fakeDriver.getArgumentsList();
+				var i,j;
+				var offsetSync = 1;		
+
+				// console.log("Function Calls", funcs);
+				// console.log("Results",results);
+				//console.log("Arguments",argList);
+
+				//Make sure we called the proper test-driver functions
+				test.equal(expectedFunctionList.length, funcs.length);
+				for(i = 0; i < expectedFunctionList.length; i++) {
+					test.equal(expectedFunctionList[i],funcs[i]);
+				}
+
+				//Make sure we get the proper results back
+				test.equal(expectedResultList.length, results.length);
+				for(i = 0; i < expectedResultList.length; i++) {
+					test.equal(expectedResultList[i],results[i]);
+				}
+				
+				test.done();
+			});	
 	},
+
+	/**
+	 * This test tests the device's capability to fail gracefully on write 
+	 * function calls.
+	 * 
+	 * @param  {[type]} test The test object.
+	 */
+	testWriteFail: function(test) {
+		//Force the driver to produce an error code
+		var erCode = 1;
+		fakeDriver.setExpectedResult(erCode);
+		
+		//Configure running-engines
+		asyncRun.config(dev, null);
+		syncRun.config(dev, null);
+
+		//Create test-variables
+		var testList = [
+			'write(-1,2.5)',//Test for invalid address
+			'write("AIN999",2.5)',//Test for invalid name
+			'write(0,2.5)',//Test for Read only address-number
+			'write("AIN0",2.5)',//Test for read only address-n.
+			'write(1000,2.5)',//Test for driver-reported errors
+			'write("DAC0",2.5)',//Test for driver-reported errors
+			'write(60500,"Mine")',//Test for driver-reported errors
+			'write("DEVICE_NAME_DEFAULT","Mine")',//again...
+		];
+		//Expected info combines both sync & async
+		var expectedFunctionList = [ 
+			'LJM_eWriteAddress',
+			'LJM_eWriteName',
+			'LJM_eWriteAddressString',
+			'LJM_eWriteNameString',
+
+			'LJM_eWriteAddressAsync',
+			'LJM_eWriteNameAsync',
+			'LJM_eWriteAddressStringAsync',
+			'LJM_eWriteNameStringAsync',
+		];
+		//Expected info combines both sync & async
+		var expectedResultList = [
+			'Invalid Address',
+			'Invalid Address',
+			'Invalid Write Attempt',
+			'Invalid Write Attempt',
+			erCode,
+			erCode,
+			erCode,
+			erCode,
+			'Invalid Address',
+			'Invalid Address',
+			'Invalid Write Attempt',
+			'Invalid Write Attempt',
+			erCode,
+			erCode,
+			erCode,
+			erCode,
+		];
+
+		//Run the desired commands
+		syncRun.run(testList);
+		asyncRun.run(testList,
+			function(res) {
+				//Error
+			}, function(res) {
+				//Success
+				var funcs = fakeDriver.getLastFunctionCall();
+				var results = asyncRun.getResults();
+				var argList = fakeDriver.getArgumentsList();
+				var i,j;
+				var offsetSync = 1;		
+
+				// console.log("Function Calls", funcs);
+				// console.log("Results",results);
+				//console.log("Arguments",argList);
+
+				//Make sure we called the proper test-driver functions
+				test.equal(expectedFunctionList.length, funcs.length);
+				for(i = 0; i < expectedFunctionList.length; i++) {
+					test.equal(expectedFunctionList[i],funcs[i]);
+				}
+
+				//Make sure we get the proper results back
+				test.equal(expectedResultList.length, results.length);
+				for(i = 0; i < expectedResultList.length; i++) {
+					test.equal(expectedResultList[i],results[i]);
+				}
+				
+				test.done();
+			});	
+	},
+
 
 	/**
 	 * This test tests the LJM_eWriteNames, and LJM_eWriteAddresses asynchronous
