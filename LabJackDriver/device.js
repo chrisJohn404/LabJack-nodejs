@@ -788,6 +788,8 @@ exports.labjack = function ()
 						onError({retError:"Invalid Address", errFrame:i});
 					} else if (info.directionValid == 0) {
 						onError({retError:"Invalid Read Attempt", errFrame:i});
+					} else {
+						onError({retError:"Weird-Error", errFrame:i});
 					}
 					return -1;
 				}
@@ -863,6 +865,8 @@ exports.labjack = function ()
 				ref.writeCString(buf,0,addresses[i]);
 				ref.writePointer(aNames,i*8,buf);
 			}
+
+			//Execute LJM command
 			errorResult = this.ljm.LJM_eReadNames(
 				this.handle, 
 				length, 
@@ -898,6 +902,7 @@ exports.labjack = function ()
 								errFrame:i
 							}
 						);
+						return {retError:"Invalid Address", errFrame:i};
 					} else if (info.directionValid == 0) {
 						throw new DriverInterfaceError(
 							{
@@ -905,11 +910,20 @@ exports.labjack = function ()
 								errFrame:i
 							}
 						);
+						return {retError:"Invalid Read Attempt", errFrame:i};
+					} else {
+						throw new DriverInterfaceError(
+							{
+								retError:"Weird-Error", 
+								errFrame:i
+							}
+						);
+						return {retError:"Weird-Error", errFrame:i};
 					}
-					return {retError:"Invalid Address", errFrame:i};
 				}
 			}
 
+			//Execute LJM command
 			errorResult = this.ljm.LJM_eReadAddresses(
 				this.handle, 
 				length, 
@@ -1063,7 +1077,12 @@ exports.labjack = function ()
 				strBuffer.fill(0);
 
 				//Fill the write-string
-				strBuffer.write(value, 0, value.length, 'utf8');
+				if(value.length <= 50) {
+					strBuffer.write(value, 0, value.length, 'utf8');
+				} else {
+					onError("String is to long");
+					return 0;
+				}
 
 				//Execute LJM command
 				errorResult = this.ljm.LJM_eWriteNameString.async(
@@ -1119,7 +1138,12 @@ exports.labjack = function ()
 				strBuffer.fill(0);
 
 				//Fill the write-string
-				strBuffer.write(value, 0, value.length, 'utf8');
+				if(value.length <= 50) {
+					strBuffer.write(value, 0, value.length, 'utf8');
+				} else {
+					onError("String is to long");
+					return 0;
+				}
 
 				//Execute LJM command
 				errorResult = this.ljm.LJM_eWriteAddressString.async(
@@ -1188,8 +1212,13 @@ exports.labjack = function ()
 				strBuffer.fill(0);
 
 				//Fill the write-string
-				strBuffer.write(value, 0, value.length, 'utf8');
-
+				if(value.length <= 50) {
+					strBuffer.write(value, 0, value.length, 'utf8');
+				} else {
+					throw new DriverInterfaceError("String is to long");
+					return "string is to long";
+				}
+				
 				//Execute LJM command
 				errorResult = this.ljm.LJM_eWriteNameString(
 					this.handle, 
@@ -1222,7 +1251,12 @@ exports.labjack = function ()
 				strBuffer.fill(0);
 
 				//Fill the write-string
-				strBuffer.write(value, 0, value.length, 'utf8');
+				if(value.length <= 50) {
+					strBuffer.write(value, 0, value.length, 'utf8');
+				} else {
+					throw new DriverInterfaceError("String is to long");
+					return "string is to long";
+				}
 
 				//Execute LJM command
 				errorResult = this.ljm.LJM_eWriteAddressString(
@@ -1249,6 +1283,262 @@ exports.labjack = function ()
 		} else {
 			throw new DriverOperationError(errorResult);
 			return errorResult;
+		}
+	}
+	this.writeMany = function(addresses, values, onError, onSuccess) {
+		//Check to make sure a device has been opened
+		this.checkStatus();
+
+		if(!(addresses instanceof Array)) {
+			onError('Addresses must be of type Array');
+			return;
+		}
+		if(!(values instanceof Array)) {
+			onError('Values must be of type Array');
+			return;
+		}
+		if(addresses.length != values.length) {
+			onError('Length of addresses & values must be equal');
+			return;
+		}
+		if(typeof(values[0]) != 'number') {
+			onError('values must be of type number-array');
+			return;
+		}
+
+		//Perform universal buffer allocations
+		var length = addresses.length;
+		var aValues = new Buffer(8*length);
+		var errors = new ref.alloc('int',1);
+		var errorResult;
+
+		//Decide whether to perform address-number or address-name operation
+		if(typeof(addresses[0]) == 'string') {
+			//Perform necessary string buffer allocations
+			var i;
+			var offset = 0;
+			var aNames = new Buffer(8*length);
+			for(i = 0; i < length; i++)
+			{
+				aValues.writeDoubleLE(values[i],offset);
+				var buf = new Buffer(addresses[i].length+1);
+				ref.writeCString(buf,0,addresses[i]);
+				ref.writePointer(aNames,offset,buf);
+				offset+=8;
+			}
+
+			//Execute LJM command
+			errorResult = this.ljm.LJM_eWriteNames.async(
+				this.handle, 
+				length, 
+				aNames, 
+				aValues, 
+				errors, 
+				function(err, res){
+					if(err) throw err;
+					if((res == 0))
+					{
+						onSuccess();
+					}
+					else
+					{
+						onError({retError:res, errFrame:errors.deref()});
+					}
+				}
+			);
+			return 0;
+		} else if(typeof(addresses[0]) == 'number') {
+			//Perform necessary number buffer allocations
+			var addrBuff = new Buffer(4*length);
+			var addrTypeBuff = new Buffer(4*length);
+			var inValidOperation = 0;
+
+			var info;
+			var offset=0;
+			var offsetD = 0;
+			i = 0;
+
+			for(i = 0; i < length; i++)
+			{
+				info = this.constants.getAddressInfo(addresses[i], 'W');
+				if(info.directionValid == 1)
+				{
+					addrTypeBuff.writeInt32LE(info.type,offset);
+					addrBuff.writeInt32LE(addresses[i],offset);
+					aValues.writeDoubleLE(values[i],offsetD);
+					offset += 4;
+					offsetD+=8;
+				}
+				else
+				{
+					if(info.type == -1) {
+						onError({retError:"Invalid Address", errFrame:i});
+					} else if (info.directionValid == 0) {
+						onError({retError:"Invalid Read Attempt", errFrame:i});
+					} else {
+						onError({retError:"Weird-Error", errFrame:i});
+					}
+					return;
+				}
+			}
+
+			//Execute LJM command
+			errorResult = this.ljm.LJM_eWriteAddresses.async(
+				this.handle, 
+				length, 
+				addrBuff, 
+				addrTypeBuff, 
+				aValues, 
+				errors, 
+				function(err, res){
+					if(err) throw err;
+					if((res == 0))
+					{
+						onSuccess();
+					}
+					else
+					{
+						onError({retError:res, errFrame:errors.deref()});
+					}
+				}
+			);
+			return 0;
+		} else {
+			onError('Invalid Array-type, must be number-array or string-array');
+			return;
+		}
+	}
+	this.writeManySync = function(addresses, values) {
+		//Check to make sure a device has been opened
+		this.checkStatus();
+
+		if(!(addresses instanceof Array)) {
+			throw new DriverInterfaceError('Addresses must be of type Array');
+			return 'Addresses must be of type Array';
+		}
+		if(!(values instanceof Array)) {
+			throw new DriverInterfaceError('Values must be of type Array');
+			return 'Values must be of type Array';
+		}
+		if(addresses.length != values.length) {
+			throw new DriverInterfaceError(
+				'Length of Addresses & Values must be equal'
+			);
+			return 'Length of Addresses & Values must be equal';
+		}
+		if(typeof(values[0]) != 'number') {
+			throw new DriverInterfaceError(
+				'Values must be of type number-array'
+			);
+			return 'Values must be of type number-array';
+		}
+
+		//Perform universal buffer allocations
+		var length = addresses.length;
+		var aValues = new Buffer(8*length);
+		var errors = new ref.alloc('int',1);
+		var errorResult;
+
+		//Decide whether to perform address-number or address-name operation
+		if(typeof(addresses[0]) == 'string') {
+			//Perform necessary string buffer allocations
+			var i;
+			var offset = 0;
+			var aNames = new Buffer(8*length);
+			for(i = 0; i < length; i++)
+			{
+				aValues.writeDoubleLE(values[i],offset);
+				var buf = new Buffer(addresses[i].length+1);
+				ref.writeCString(buf,0,addresses[i]);
+				ref.writePointer(aNames,offset,buf);
+				offset+=8;
+			}
+
+			//Execute LJM function
+			errorResult = this.ljm.LJM_eWriteNames(
+				this.handle, 
+				length, 
+				aNames, 
+				aValues, 
+				errors
+			);
+
+		} else if(typeof(addresses[0]) == 'number') {
+			//Perform necessary number buffer allocations
+			var addrBuff = new Buffer(4*length);
+			var addrTypeBuff = new Buffer(4*length);
+			var inValidOperation = 0;
+
+			var info;
+			var offset=0;
+			var offsetD = 0;
+			i = 0;
+
+			for(i = 0; i < length; i++)
+			{
+				info = this.constants.getAddressInfo(addresses[i], 'W');
+				if(info.directionValid == 1)
+				{
+					addrTypeBuff.writeInt32LE(info.type,offset);
+					addrBuff.writeInt32LE(addresses[i],offset);
+					aValues.writeDoubleLE(values[i],offsetD);
+					offset += 4;
+					offsetD+=8;
+				}
+				else
+				{
+					if(info.type == -1) {
+						throw new DriverInterfaceError(
+							{
+								retError:"Invalid Address", 
+								errFrame:i
+							}
+						);
+						return {retError:"Invalid Address", errFrame:i};
+					} else if (info.directionValid == 0) {
+						throw new DriverInterfaceError(
+							{
+								retError:"Invalid Write Attempt", 
+								errFrame:i
+							}
+						);
+						return {retError:"Invalid Write Attempt", errFrame:i};
+					} else {
+						throw new DriverInterfaceError(
+							{
+								retError:"Weird-Error", 
+								errFrame:i
+							}
+						);
+						return {retError:"Weird-Error", errFrame:i};
+					}
+				}
+			}
+
+			//Execute LJM command
+			errorResult = this.ljm.LJM_eWriteAddresses(
+				this.handle, 
+				length, 
+				addrBuff, 
+				addrTypeBuff, 
+				aValues, 
+				errors
+			);
+		} else {
+			throw new DriverInterfaceError(
+				'Invalid Array-type, must be number-array or string-array'
+			);
+			return 'Invalid Array-type, must be number-array or string-array';
+		}
+		if(errorResult == 0) {
+			return errorResult;
+		} else {
+			throw new DriverOperationError(
+				{
+					retError:errorResult, 
+					errFrame:errors.deref()}
+			);
+			return {retError:errorResult, errFrame:errors.deref()};
 		}
 	}
 

@@ -14,6 +14,7 @@
 
 var rewire = require('rewire');
 var q = require('q');
+var ref = require('ref');
 var fakeDriver = require('./TestObjects/test_driver_wrapper');
 
 var driver_wrapper = rewire('../LabJackDriver/driver_wrapper');
@@ -606,14 +607,11 @@ module.exports = {
 
 				//Test to make sure that the proper number of commands have been
 				//executed & results returned:
-				test.equal(funcs.length, expectedFunctionList.length);
 				test.equal(results.length, expectedResultList.length);
 
 				//Test to make sure that the expected driver calls is actually
 				//what happened:
-				for(i = 0; i < funcs.length; i++) {
-					test.equal(funcs[i],expectedFunctionList[i]);
-				}
+				test.deepEqual(expectedFunctionList,funcs);
 
 				//Make sure that the errors are being returned properly & stored
 				//in the results array
@@ -678,9 +676,7 @@ module.exports = {
 				// console.log("Arguments",argList);
 
 				//Make sure we called the proper test-driver functions
-				for(i = 0; i < expectedFunctionList.length; i++) {
-					test.equal(expectedFunctionList[i],funcs[i]);
-				}
+				test.deepEqual(expectedFunctionList,funcs);
 
 				//Make sure the results array's are what we expected
 				for(i = 0; i < expectedResultList.length; i++) {
@@ -746,16 +742,10 @@ module.exports = {
 				//console.log("Arguments",argList);
 
 				//Make sure we called the proper test-driver functions
-				test.equal(expectedFunctionList.length, funcs.length);
-				for(i = 0; i < expectedFunctionList.length; i++) {
-					test.equal(expectedFunctionList[i],funcs[i]);
-				}
+				test.deepEqual(expectedFunctionList,funcs);
 
 				//Make sure we get the proper results back
-				test.equal(expectedResultList.length, results.length);
-				for(i = 0; i < expectedResultList.length; i++) {
-					test.equal(expectedResultList[i],results[i]);
-				}
+				test.deepEqual(expectedResultList,results);
 				
 				test.done();
 			});	
@@ -837,16 +827,10 @@ module.exports = {
 				//console.log("Arguments",argList);
 
 				//Make sure we called the proper test-driver functions
-				test.equal(expectedFunctionList.length, funcs.length);
-				for(i = 0; i < expectedFunctionList.length; i++) {
-					test.equal(expectedFunctionList[i],funcs[i]);
-				}
+				test.deepEqual(expectedFunctionList,funcs);
 
 				//Make sure we get the proper results back
-				test.equal(expectedResultList.length, results.length);
-				for(i = 0; i < expectedResultList.length; i++) {
-					test.equal(expectedResultList[i],results[i]);
-				}
+				test.deepEqual(expectedResultList,results);
 				
 				test.done();
 			});	
@@ -858,8 +842,173 @@ module.exports = {
 	 * function calls of LJM.
 	 * @param  {[type]} test The test object.
 	 */
-	testWriteMany: function(test) {
-		test.done();
+	testWriteMany: function(test) {		
+		//Configure running-engines
+		asyncRun.config(dev, null);
+		syncRun.config(dev, null);
+
+		var numAddresses = 2;
+		//Create test-variables
+		var writtenValuesList = [2.5,2.5];
+		var addressesList = [1000,1002];
+		var typesList = [3,3];
+		var namesList = ["DAC0","DAC1"];
+
+		var testList = [
+			'writeMany([1000,1002],[2.5,2.5])',
+			'writeMany(["DAC0","DAC1"],[2.5,2.5])',
+		];
+
+		//Expected info combines both sync & async
+		var expectedFunctionList = [ 
+			'LJM_eWriteAddresses',
+			'LJM_eWriteNames',
+			'LJM_eWriteAddressesAsync',
+			'LJM_eWriteNamesAsync',
+		];
+		//Expected info combines both sync & async
+		var expectedResultList = [
+			0,0,
+			'SUCCESS','SUCCESS',
+		];
+
+		//Run the desired commands
+		syncRun.run(testList);
+		asyncRun.run(testList,
+			function(res) {
+				//Error
+			}, function(res) {
+				//Success
+				var funcs = fakeDriver.getLastFunctionCall();
+				var results = asyncRun.getResults();
+				var argList = fakeDriver.getArgumentsList();
+				var i,j;
+				var offsetSync = 1;		
+
+				// console.log("Function Calls", funcs);
+				// console.log("Results",results);
+				// console.log("Arguments",argList);
+				
+				//Test to make sure the proper functions were called
+				test.deepEqual(expectedFunctionList,funcs);
+
+				//test to make sure the proper results were acquired
+				test.deepEqual(expectedResultList,results);
+
+				//Test to make sure the proper arguments were supplied
+				//Slightly confusing to read.... not sure how to fix
+				var numCalls = argList.length;
+				for(i = 1; i < numCalls; i++) {
+					//Length Variable
+					test.equal(argList[i][1],numAddresses);
+
+					//check for callback
+					if(i < testList.length + 1) {
+						//Sync function
+						test.strictEqual(argList[i][argList[i].length-1],undefined);
+					} else {
+						//Async function
+						test.equal(typeof(argList[i][argList[i].length-1]),'function');
+					}
+
+					//Check for special arguments
+					if(funcs[i-1].search('Names') != -1) {
+						//Names function, 1.de-reference the ptr 2.get c-str:
+						var buffer = argList[i][2];
+						for(j = 0; j < numAddresses; j++) {
+							var namePtr = ref.readPointer(buffer,j*8,50);
+							test.equal(ref.readCString(namePtr,0),namesList[j])
+						}
+						//Values
+						for(j = 0; j < numAddresses; j++) {
+							test.equal(argList[i][3].readDoubleLE(j*8),writtenValuesList[j]);
+						}
+						//Error
+						test.equal(argList[i][4].length,4);
+					} else {
+						//Addresses function:
+						//Addresses
+						for(j = 0; j < numAddresses; j++) {
+							test.equal(argList[i][2].readUInt32LE(j*4),addressesList[j]);
+						}
+						//Types
+						for(j = 0; j < numAddresses; j++) {
+							test.equal(argList[i][3].readUInt32LE(j*4),typesList[j]);
+						}
+						//Values
+						for(j = 0; j < numAddresses; j++) {
+							test.equal(argList[i][4].readDoubleLE(j*8),writtenValuesList[j]);
+						}
+						//Error
+						test.equal(argList[i][5].length,4);
+					}
+				}
+				test.done();
+			});	
+	},
+
+	testWriteManyFail: function(test) {
+		//Force the driver to produce an error code
+		var erCode = 1;
+		fakeDriver.setExpectedResult(erCode);
+
+		//Configure running-engines
+		asyncRun.config(dev, null);
+		syncRun.config(dev, null);
+
+		var numAddresses = 2;
+		//Create test-variables
+		var testList = [
+			'writeMany([0,2],[2.5,2.5])',
+			'writeMany([-1,2],[2.5,2.5])',
+			'writeMany(["AIN0","AIN2"],[2.5,2.5])',
+			'writeMany(["AIN999","AIN2"],[2.5,2.5])',
+		];
+
+		//Expected info combines both sync & async
+		var expectedFunctionList = [ 
+			'LJM_eWriteNames',
+			'LJM_eWriteNames',
+			'LJM_eWriteNamesAsync',
+			'LJM_eWriteNamesAsync'
+		];
+		//Expected info combines both sync & async
+		var expectedResultList = [
+			{ retError: 'Invalid Write Attempt', errFrame: 0 },
+			{ retError: 'Invalid Address', errFrame: 0 },
+			{ retError: 1, errFrame: 1 },
+			{ retError: 1, errFrame: 1 },
+			{ retError: 'Invalid Read Attempt', errFrame: 0 },
+			{ retError: 'Invalid Address', errFrame: 0 },
+			{ retError: 1, errFrame: 1 },
+			{ retError: 1, errFrame: 1 }
+		];
+
+		//Run the desired commands
+		syncRun.run(testList);
+		asyncRun.run(testList,
+			function(res) {
+				//Error
+			}, function(res) {
+				//Success
+				var funcs = fakeDriver.getLastFunctionCall();
+				var results = asyncRun.getResults();
+				var argList = fakeDriver.getArgumentsList();
+				var i,j;
+				var offsetSync = 1;		
+
+				// console.log("Function Calls", funcs);
+				// console.log("Results",results);
+				// console.log("Arguments",argList);
+				
+				//Test to make sure the proper functions were called
+				test.deepEqual(expectedFunctionList,funcs);
+
+				//test to make sure the proper results were acquired
+				test.deepEqual(expectedResultList,results);
+
+				test.done();
+			});	
 	},
 
 	/**
