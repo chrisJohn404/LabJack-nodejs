@@ -1081,10 +1081,12 @@ module.exports = {
 	/**
 	 * This test tests the  asynchronous function call of LJM.
 	 * @param  {[type]} test The test object.
+	 *
+	 * DEPRECIATED IN LJM 2.46????????? skipping for now
 	 */
-	testResetConnection: function(test) {
-		test.done();
-	}
+	// testResetConnection: function(test) {
+	// 	test.done();
+	// }
 };
 
 
