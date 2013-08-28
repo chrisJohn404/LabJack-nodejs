@@ -989,7 +989,7 @@ module.exports = {
 	 * @param  {[type]} test [description]
 	 */
 	testRWMany: function(test) {
-		var highestReadVal = 9;;
+		var highestReadVal = 9;
 		fakeDriver.setResultArg(highestReadVal);
 
 		//Configure running-engines
@@ -1001,7 +1001,7 @@ module.exports = {
 		//rwMany(numFrames,addresses,directions,numValues,values
 		var testList = [
 			'rwMany(2,[0,2],[0,0],[1,1],[null,null])',
-			'rwMany(2,["AIN0","AIN2"],[0,0],[1,1],[null,null])',//2 frames, read AIN's, 1read/frame, null's
+			'rwMany(2,["AIN0","AIN2"],[0,0],[1,1],[null,null])',
 			'rwMany(3,[0,2,1000],[0,0,1],[1,1,1],[null,null,2.5])',
 			'rwMany(2,[0,1000],[0,1],[2,1],[null,null,2.5])',
 			'rwMany(2,[0,1000],[0,1],[1,1],[null,2.5])',
