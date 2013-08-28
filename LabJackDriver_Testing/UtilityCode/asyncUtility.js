@@ -4,7 +4,7 @@ var list = functionLocationList.getList();
 var functionList = [];
 results = [];
 var device = null;
-var ljmDriver;
+var driver = null;
 var numTests = 0;
 
 var onTestError;
@@ -19,10 +19,12 @@ var testComplete = true;
 
 var pRes = false;
 var pCmd = false;
+var driver_const;
 
-exports.config = function(dev, driver) {
+exports.config = function(dev, driv, constants) {
 	device = dev;
-	ljmDriver = driver;
+	driver = driv;
+	driver_const = constants;
 };
 
 var nextStep = function() {

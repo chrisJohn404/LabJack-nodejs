@@ -33,6 +33,12 @@ else
 			then
 				nodeunit $JSON_CONSTANTS_PARSER_TEST
 			fi
+			if [ $2 = "all" ]
+			then
+				nodeunit $JSON_CONSTANTS_PARSER_TEST
+				nodeunit $DEVICE_TEST
+				nodeunit $DRIVER_TEST
+			fi
 		else
 			echo "./testMe.js --testNum=$2 --async=$1"
 			./testMe.js --testNum=$2 --async=$1

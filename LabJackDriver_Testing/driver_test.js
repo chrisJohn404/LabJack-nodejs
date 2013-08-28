@@ -20,9 +20,10 @@ var fakeDriver = require('./TestObjects/test_driver_wrapper');
 var driver_wrapper = rewire('../LabJackDriver/driver_wrapper');
 
 var deviceManager = rewire('../LabJackDriver/device');
+var driverManager = rewire('../LabjackDriver/driver');
 deviceManager.__set__('driverLib',fakeDriver);
-var driverManager = reqire('../LabjackDriver/driver');
-driverManager.__set__('driverLIb',fakeDriver);
+driverManager.__set__('driverLib',fakeDriver);
+
 
 var driver_const = require('../LabJackDriver/driver_const');
 
@@ -31,8 +32,9 @@ var syncRun = require('./UtilityCode/syncUtility');
 
 var callSequenceChecker = require('./call_sequence_checker');
 
-var dev;
-var driver;
+var dev = new deviceManager.labjack();
+var driver = new driverManager.ljmDriver();
+
 var autoOpen = false;
 var autoClose = false;
 
@@ -41,23 +43,100 @@ var testVal = 69;
 module.exports = {
     setUp: function(callback) {
         callback();
+
     },
     tearDown: function (callback) {
         // clean up
         callback();
     },
     testListAll: function(test) {
-        asyncRun.config(dev, driver);
-        syncRun.config(dev, driver);
+        asyncRun.config(dev, driver,driver_const);
+        syncRun.config(dev, driver,driver_const);
 
          //Create test-variables
         var testList = [
+            'listAll()',
+            'listAll("LJM_dtANY","LJM_ctANY")',
+            'listAll("LJM_dtT7","LJM_ctUSB")',
+            'listAll(7,1)',
         ];
         //Expected info combines both sync & async
         var expectedFunctionList = [ 
+            'LJM_ListAllS',
+            'LJM_ListAllS',
+            'LJM_ListAllS',
+            'LJM_ListAll',
+            'LJM_ListAllSAsync',
+            'LJM_ListAllSAsync',
+            'LJM_ListAllSAsync',
+            'LJM_ListAllAsync'
         ];
         //Expected info combines both sync & async
         var expectedResultList = [
+            [   
+                { 
+                    deviceType: 0,
+                    connectionType: 0,
+                    serialNumber: 0,
+                    ipAddress: '0.0.0.0' 
+                } 
+            ],
+            [ 
+                { 
+                    deviceType: 0,
+                    connectionType: 0,
+                    serialNumber: 0,
+                    ipAddress: '0.0.0.0' 
+                } 
+            ],
+            [ 
+                { 
+                    deviceType: 0,
+                    connectionType: 0,
+                    serialNumber: 0,
+                    ipAddress: '0.0.0.0' 
+                } 
+            ],
+            [ 
+                { 
+                    deviceType: 0,
+                    connectionType: 0,
+                    serialNumber: 0,
+                    ipAddress: '0.0.0.0' 
+                } 
+            ],
+            [ 
+                { 
+                    deviceType: 0,
+                    connectionType: 0,
+                    serialNumber: 0,
+                    ipAddress: '0.0.0.0' 
+                } 
+            ],
+            [ 
+                { 
+                    deviceType: 0,
+                    connectionType: 0,
+                    serialNumber: 0,
+                    ipAddress: '0.0.0.0' 
+                } 
+            ],
+            [ 
+                { 
+                    deviceType: 0,
+                    connectionType: 0,
+                    serialNumber: 0,
+                    ipAddress: '0.0.0.0' 
+                } 
+            ],
+            [ 
+                { 
+                    deviceType: 0,
+                    connectionType: 0,
+                    serialNumber: 0,
+                    ipAddress: '0.0.0.0' 
+                } 
+            ]
         ];
 
         //Run the desired commands
@@ -75,13 +154,13 @@ module.exports = {
 
                 // console.log("Function Calls", funcs);
                 // console.log("Results",results);
-                //console.log("Arguments",argList);
+                // console.log("Arguments",argList);
 
                 //Make sure we called the proper test-driver functions
-                // test.deepEqual(expectedFunctionList,funcs);
+                test.deepEqual(expectedFunctionList,funcs);
 
                 //Make sure we get the proper results back
-                // test.deepEqual(expectedResultList,results);
+                test.deepEqual(expectedResultList,results);
 
                 test.done();
             }

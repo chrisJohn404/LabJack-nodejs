@@ -433,7 +433,7 @@ var LJM_eAddresses = createCallableObject(
 		argumentsList.push(arguments);
 		populateValues(numFrames, aWrites, aNumValues, aValues);		
 		// console.log("Addr",arguments);
-		return expectedResult
+		return expectedResult;
 	},
 	function(handle, numFrames, aAddresses, aTypes, aWrites, aNumValues, aValues, ErrorAddress, callback) {
 		lastFunctionCall.push("LJM_eAddressesAsync");
@@ -449,7 +449,7 @@ var LJM_eNames = createCallableObject(
 		lastFunctionCall.push("LJM_eNames");
 		argumentsList.push(arguments);
 		populateValues(numFrames, aWrites, aNumValues, aValues);
-		return expectedResult
+		return expectedResult;
 	},
 	function(handle, numFrames, aNames, aWrites, aNumValues, aValues, ErrorAddress, callback) {
 		lastFunctionCall.push("LJM_eNamesAsync");
@@ -459,11 +459,51 @@ var LJM_eNames = createCallableObject(
 	});
 
 //******************************************************************************
+//*********************		Driver Specific Functions	************************
+//******************************************************************************
+var LJM_ListAll = createCallableObject(
+	function(devT, conT, numFound, aDeviceTypes, aConnectionTypes, aSerialNumbers, aIPAddresses) {
+		lastFunctionCall.push("LJM_ListAll");
+		argumentsList.push(arguments);
+		return expectedResult;
+	},
+	function(devT, conT, numFound, aDeviceTypes, aConnectionTypes, aSerialNumbers, aIPAddresses, callback) {
+		lastFunctionCall.push("LJM_ListAllAsync");
+		argumentsList.push(arguments);
+		reportEnd(callback);
+	});
+var LJM_ListAllS = createCallableObject(
+	function(devT, conT, numFound, aDeviceTypes, aConnectionTypes, aSerialNumbers, aIPAddresses) {
+		lastFunctionCall.push("LJM_ListAllS");
+		argumentsList.push(arguments);
+		return expectedResult;
+	},
+	function(devT, conT, numFound, aDeviceTypes, aConnectionTypes, aSerialNumbers, aIPAddresses, callback) {
+		lastFunctionCall.push("LJM_ListAllSAsync");
+		argumentsList.push(arguments);
+		reportEnd(callback);
+	});
+var LJM_ReadLibraryConfigS = createCallableObject(
+	function(parameter, returnVar) {
+		if(parameter == 'LJM_LIBRARY_VERSION') {
+			return driver_const.LJM_JS_VERSION;
+		}
+		// lastFunctionCall.push("LJM_ReadLibraryConfigS");
+		// argumentsList.push(arguments);
+		return expectedResult;
+	},
+	function(parameter, returnVar, callback) {
+		// lastFunctionCall.push("LJM_ReadLibraryConfigSAsync");
+		// argumentsList.push(arguments);
+		reportEnd(callback);
+	});
+//******************************************************************************
 //*********************		Driver Dict-Object	********************************
 //******************************************************************************
 var fakeDriver = {
 	// 'LJM_ListAll': LJM_ListAll,
 	// 'LJM_ListAllS': LJM_ListAllS,
+	//Device Functions
 	'LJM_Open': LJM_Open,
 	'LJM_OpenS': LJM_OpenS,
 	'LJM_GetHandleInfo': LJM_GetHandleInfo,
@@ -486,6 +526,12 @@ var fakeDriver = {
 	'LJM_eReadAddressString': LJM_eReadAddressString,
 	'LJM_eWriteNameString': LJM_eWriteNameString,
 	'LJM_eWriteAddressString': LJM_eWriteAddressString,
+
+	//Driver Functions
+	'LJM_ListAll': LJM_ListAll,
+	'LJM_ListAllS': LJM_ListAllS,
+	'LJM_ReadLibraryConfigS': LJM_ReadLibraryConfigS,
+	
 };
 
 exports.getDriver = function()

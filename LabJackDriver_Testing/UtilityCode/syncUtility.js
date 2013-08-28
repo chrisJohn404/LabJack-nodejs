@@ -17,10 +17,11 @@ testComplete = true;
 
 var pRes = false;
 var pCmd = false;
-
-exports.config = function(dev, ljmDriver) {
+var driver_const;
+exports.config = function(dev, ljmDriver, constants) {
 	device = dev;
 	driver = ljmDriver;
+	driver_const = constants;
 };
 
 var nextStep = function() {

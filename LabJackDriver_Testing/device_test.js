@@ -1049,10 +1049,8 @@ module.exports = {
 			[ 7, 6 ]
 		];
 
-		//Run the desired commands
-		console.log('Run-Sync');
+		//Run the desired comman
 		syncRun.run(testList);
-		console.log('Run-Async');
 		asyncRun.run(testList,
 			function(res) {
 				//Error
@@ -1064,8 +1062,8 @@ module.exports = {
 				var i,j;
 				var offsetSync = 1;		
 
-				console.log("Function Calls", funcs);
-				console.log("Results",results);
+				// console.log("Function Calls", funcs);
+				// console.log("Results",results);
 				// console.log("Arguments",argList);
 				
 				//Test to make sure the proper functions were called
