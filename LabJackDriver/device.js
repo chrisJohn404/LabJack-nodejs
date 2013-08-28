@@ -1285,8 +1285,19 @@ exports.labjack = function ()
 			return errorResult;
 		}
 	}
+
+	/**
+	 * Asynchronously calls the LJM functions: LJM_eWriteAddresses and 
+	 * LJM_eWriteNames given appropriate input variables.
+	 * 
+	 * @param  {number/string array} addresses A number or string array of 
+	 *                               		   addresses/names to be called.
+	 * @param  {number array} values    An array of values to write.
+	 * @param  {function} onError   Function called when finished with an error.
+	 * @param  {function} onSuccess Function called when finished successfully.
+	 */
 	this.writeMany = function(addresses, values, onError, onSuccess) {
-		//Check to make sure a device has been opened
+		//Check to make sure a device has been opened.
 		this.checkStatus();
 
 		if(!(addresses instanceof Array)) {
@@ -1306,15 +1317,15 @@ exports.labjack = function ()
 			return;
 		}
 
-		//Perform universal buffer allocations
+		//Perform universal buffer allocations.
 		var length = addresses.length;
 		var aValues = new Buffer(8*length);
 		var errors = new ref.alloc('int',1);
 		var errorResult;
 
-		//Decide whether to perform address-number or address-name operation
+		//Decide whether to perform address-number or address-name operation.
 		if(typeof(addresses[0]) == 'string') {
-			//Perform necessary string buffer allocations
+			//Perform necessary string buffer allocations.
 			var i;
 			var offset = 0;
 			var aNames = new Buffer(8*length);
@@ -1327,7 +1338,7 @@ exports.labjack = function ()
 				offset+=8;
 			}
 
-			//Execute LJM command
+			//Execute LJM command.
 			errorResult = this.ljm.LJM_eWriteNames.async(
 				this.handle, 
 				length, 
@@ -1348,7 +1359,7 @@ exports.labjack = function ()
 			);
 			return 0;
 		} else if(typeof(addresses[0]) == 'number') {
-			//Perform necessary number buffer allocations
+			//Perform necessary number buffer allocations.
 			var addrBuff = new Buffer(4*length);
 			var addrTypeBuff = new Buffer(4*length);
 			var inValidOperation = 0;
@@ -1382,7 +1393,7 @@ exports.labjack = function ()
 				}
 			}
 
-			//Execute LJM command
+			//Execute LJM command.
 			errorResult = this.ljm.LJM_eWriteAddresses.async(
 				this.handle, 
 				length, 
@@ -1408,8 +1419,21 @@ exports.labjack = function ()
 			return;
 		}
 	}
+	/**
+	 * Synchronously calls the LJM functions: LJM_eWriteAddresses and 
+	 * LJM_eWriteNames given appropriate input variables.
+	 * 
+	 * @param  {number/string-array} addresses A number or string array of 
+	 *                               		   addresses/names to be called.
+	 * @param  {number-array} values    An array of values to write.
+	 * @return {number/string}           0 on success, string on error.
+	 * @throws {DriverInterfaceError} If there is an error produced before 
+	 *         							calling the LJM function.
+	 * @throws {DriverOperationError} If There is an error produced during the 
+	 *         							LJM driver function.
+	 */
 	this.writeManySync = function(addresses, values) {
-		//Check to make sure a device has been opened
+		//Check to make sure a device has been opened.
 		this.checkStatus();
 
 		if(!(addresses instanceof Array)) {
@@ -1433,15 +1457,15 @@ exports.labjack = function ()
 			return 'Values must be of type number-array';
 		}
 
-		//Perform universal buffer allocations
+		//Perform universal buffer allocations.
 		var length = addresses.length;
 		var aValues = new Buffer(8*length);
 		var errors = new ref.alloc('int',1);
 		var errorResult;
 
-		//Decide whether to perform address-number or address-name operation
+		//Decide whether to perform address-number or address-name operation.
 		if(typeof(addresses[0]) == 'string') {
-			//Perform necessary string buffer allocations
+			//Perform necessary string buffer allocations.
 			var i;
 			var offset = 0;
 			var aNames = new Buffer(8*length);
@@ -1454,7 +1478,7 @@ exports.labjack = function ()
 				offset+=8;
 			}
 
-			//Execute LJM function
+			//Execute LJM function.
 			errorResult = this.ljm.LJM_eWriteNames(
 				this.handle, 
 				length, 
@@ -1464,7 +1488,7 @@ exports.labjack = function ()
 			);
 
 		} else if(typeof(addresses[0]) == 'number') {
-			//Perform necessary number buffer allocations
+			//Perform necessary number buffer allocations.
 			var addrBuff = new Buffer(4*length);
 			var addrTypeBuff = new Buffer(4*length);
 			var inValidOperation = 0;
@@ -1515,7 +1539,7 @@ exports.labjack = function ()
 				}
 			}
 
-			//Execute LJM command
+			//Execute LJM command.
 			errorResult = this.ljm.LJM_eWriteAddresses(
 				this.handle, 
 				length, 
@@ -1543,209 +1567,390 @@ exports.labjack = function ()
 	}
 
 	/**
-	 * Function writes to multiple modbus addresses
-	 *
-	 * @params {number} address that you wish to read
-	 * @params {number} value that you wish to write
-	 * @return {number} number that was read or an error message
-	 * 		NOTE: As long as the error messages are out of range +-10 this is ok.
+	 * [rwMany description]
+	 * @param  {[type]} numFrames  [description]
+	 * @param  {[type]} addresses  [description]
+	 * @param  {[type]} directions [description]
+	 * @param  {[type]} numValues  [description]
+	 * @param  {[type]} values     [description]
+	 * @param  {[type]} onError    [description]
+	 * @param  {[type]} onSuccess  [description]
 	 */
-	/*
-	this.writeMany = function(addrs, vals)
+	this.rwMany = function(numFrames,addresses,directions,numValues,values,onError,onSuccess) 
 	{
-		var ret = this.checkCallback(arguments);
-		var useCallBacks = ret[0];
-		var onError = ret[1];
-		var onSuccess = ret[2];
-		var addresses;
-		var values;
-		if(arguments.length == 5)
-		{
-			if(arguments[4] == 1)
-			{
+		var i,j;
 
-				//console.log("Len:",vals.length,"FirstTwo",vals[0],vals[1],"StartAddr:",vals[2],vals[vals.length-1])
-				if(vals.length < 120)
-				{
-					var i;
-					for(i = 0; i < vals.length; i++)
-					{
-						//console.log(vals[i].toString(16))
-					}
-				}
-				arguments[3]();
-				return 0;
-			}
-		}
-		if(((arguments.length == 1)&&(!useCallBacks)) || ((arguments.length == 3)&&(useCallBacks)))
-		{
-			try
-			{
-				var len = arguments[0].length;
-				addresses = new Array();
-				values = new Array();
-				for(var i = 0; i < len; i++)
-				{
-					addresses.push(arguments[0][i].addr);
-					values.push(arguments[0][i].val);	
-				}
-			}
-			catch (e)
-			{
-				if(useCallBacks)
-				{
-					onError("Bad input args");
-				}
-				else
-				{
-					return -1;
-				}
-			}
-		}
-		else
-		{
-			addresses = addrs;
-			values = vals;
-		}
-		//Get the number of addresses & values and make sure they are equal
-		var length = addresses.length;
-		if(length != values.length)
-		{
-			if(useCallBacks)
-			{
-				onError("length of addresses and values arrays don't match");
-				return -1;
-			}
-			else
-			{
-				throw new DriverInterfaceError("length of addresses and values arrays don't match");
-			}
-		}
-
+		//Check to make sure a device has been opened.
 		this.checkStatus();
-		var returnResults = Array();
-		var aValues = new Buffer(8*length);
-		var errors = new ref.alloc('int',1);
-		errors[0]=0;
 
+		//Return variable
 		var errorResult;
 
-		if((typeof(addresses[0]))=="string")
-		{
-			var i;
-			var offset = 0;
-			var aNames = new Buffer(8*length);
-			for(i = 0; i < length; i++)
-			{
-				aValues.writeDoubleLE(values[i],offset);
+		//Perform function wide buffer allocations:
+		var aDirections = new Buffer(numFrames * 4);//Array of directions
+		var aNumWrites = new Buffer(numFrames * 4);//Array of ops. per frame
+		var aValues = new Buffer(values.length * 8);//Array of doubles
+		var errorVal = new Buffer(4); //Array the size of one UInt32 for err
+
+		//Clear all the arrays
+		aDirections.fill(0);
+		aNumWrites.fill(0);
+		aValues.fill(0);
+		errorVal.fill(0);
+
+		if(typeof(addresses[0]) == 'string') {
+			//Allocate space for the aNames array
+			var aNames = new Buffer(numFrames * 8);//Array of C-String pointers
+			var offsetD = 0;
+			var offsetI = 0;
+
+			//Populate the array's with data
+			for(i = 0; i < numFrames; i++) {
+				//Fill aDirections array
+				aDirections.writeUInt32LE(directions[i],offsetI);
+
+				//Fill aNumWrites array
+				aNumWrites.writeUInt32LE(numValues[i],offsetI);
+
+				//Fill aNames array
 				var buf = new Buffer(addresses[i].length+1);
 				ref.writeCString(buf,0,addresses[i]);
-				ref.writePointer(aNames,offset,buf);
-				offset+=8;
+				ref.writePointer(aNames,offsetD,buf);
+
+				//Increment pointers
+				offsetD +=8;
+				offsetI += 4;
 			}
-			if(useCallBacks)
+
+			//Increment & fill the values array separately because it may be of
+			//different length then the rest.
+			offsetD = 0;
+			for(i = 0; i < values.length; i++)
 			{
-				errorResult = this.driver.LJM_eWriteNames.async(this.handle, length, aNames, aValues, errors, function(err, res){
+				if(typeof(value) == 'number') {
+					aValues.writeDoubleLE(values,offsetD);
+				} else {
+					aValues.writeDoubleLE(0,offsetD);
+				}
+				offsetD += 8;
+			}
+
+			//Call the LJM function
+			errorResult = this.ljm.LJM_eNames.async(
+				this.handle,
+				numFrames,
+				aNames,
+				aDirections,
+				aNumWrites,
+				aValues,
+				errorVal,
+				function(err,res) {
 					if(err) throw err;
-					if((res == 0))
-					{
-						onSuccess();
+					if(res == 0) {
+						onSuccess("YAY");
+					} else {
+						onError(res);
 					}
-					else
-					{
-						onError({retError:res, errFrame:errors.deref()});
-					}
-				});
-				return 0;
-			}
-			else
-			{
-				//Perform Device I/O function
-				errorResult = this.driver.LJM_eWriteNames(this.handle, length, aNames, aValues, errors);
-			}
-		}
-		else if((typeof(addresses[0]))=="number")
-		{
-			var addrBuff = new Buffer(4*length);
-			var addrTypeBuff = new Buffer(4*length);
-			var inValidOperation = 0;
+				}
+			);
+		} else if(typeof(addresses[0]) == 'number') {
+			//Allocate space for the aNames array
+			var aAddresses = new Buffer(numFrames * 4);//Array of addresses
+			var aTypes = new Buffer(numFrames * 4);//Array of types
 
-			//Integer Returned by .dll function
-			var info;
-			var offset=0;
 			var offsetD = 0;
-			i = 0;
+			var offsetI = 0;
 
-			for(i = 0; i < length; i++)
-			{
-				info = this.constants.getAddressInfo(addresses[i], 'R');
+			//Populate the array's with data
+			for(i = 0; i < numFrames; i++) {
+				//Fill aDirections array
+				aDirections.writeUInt32LE(directions[i],offsetI);
+
+				//Fill aNumWrites array
+				aNumWrites.writeUInt32LE(numValues[i],offsetI);
+
+				//Fill aAddresses array
+				aAddresses.writeUInt32LE(addresses[i],offsetI);
+
+				//Fill aTypes array
+				var info;
+				if(directions[i] == driver_const.LJM_READ) {
+					info = this.constants.getAddressInfo(addresses[i], 'R');
+				} else if (directions[i] == driver_const.LJM_WRITE) {
+					info = this.constants.getAddressInfo(addresses[i], 'W');
+				} else {
+					//Report Error:
+					throw new DriverInterfaceError(
+						{
+							retError:"Invalid Direction", 
+							errFrame:i
+						}
+					);
+				}
 				if(info.directionValid == 1)
 				{
-					addrTypeBuff.writeInt32LE(info.type,offset);
-					addrBuff.writeInt32LE(addresses[i],offset);
-					aValues.writeDoubleLE(values[i],offsetD);
-					offset += 4;
-					offsetD+=8;
+					aTypes.writeUInt32LE(info.type,offsetI);
 				}
 				else
 				{
-					if(useCallBacks)
-					{
-						onError("Invalid Address: "+addresses[i]+", Index: "+i);
-						return driver_const.LJME_INVALID_ADDRESS;
-					}
-					else
-					{
-						throw new DriverInterfaceError("Invalid address");
+					//Report Error:
+					if(info.type == -1) {
+						throw new DriverInterfaceError(
+							{
+								retError:"Invalid Address", 
+								errFrame:i
+							}
+						);
+						return {retError:"Invalid Address", errFrame:i};
+					} else if (info.directionValid == 0) {
+						throw new DriverInterfaceError(
+							{
+								retError:"Invalid Write Attempt", 
+								errFrame:i
+							}
+						);
+						return {retError:"Invalid Write Attempt", errFrame:i};
+					} else {
+						throw new DriverInterfaceError(
+							{
+								retError:"Weird-Error", 
+								errFrame:i
+							}
+						);
+						return {retError:"Weird-Error", errFrame:i};
 					}
 				}
-			}
-			if(useCallBacks)
-			{
-				errorResult = this.driver.LJM_eWriteAddresses.async(this.handle, length, addrBuff, addrTypeBuff, aValues, errors, function(err, res){
-					if(err) throw err;
-					if((res == 0))
-					{
-						onSuccess();
-					}
-					else
-					{
-						onError({retError:res, errFrame:errors.deref()});
-					}
-				});
-				return 0;
-			}
-			else
-			{
-				//Perform Device I/O function
-				errorResult = this.driver.LJM_eWriteAddresses(this.handle, length, addrBuff, addrTypeBuff, aValues, errors);
-			}
-		}
-		else
-		{
-			if(useCallBacks)
-			{
-				onError("Invalid address type.");
-				return -1;
-			}
-			else
-			{
-				throw new DriverInterfaceError("Invalid address type.");
-			}
-		}
-		if(errorResult == 0)
-		{
-			return 0;
-		}
-		else
-		{
-			//return Error
-			//throw new DriverOperationError(errorResult);
-			return {retError:errorResult, errFrame:errors.deref()}
-		}
-	};
-	*/
 
+				//Increment pointers
+				offsetD +=8;
+				offsetI += 4;
+			}
+
+			//Increment & fill the values array separately because it may be of
+			//different length then the rest.
+			offsetD = 0;
+			for(i = 0; i < values.length; i++)
+			{
+				if(typeof(value) == 'number') {
+					aValues.writeDoubleLE(values,offsetD);
+				} else {
+					aValues.writeDoubleLE(0,offsetD);
+				}
+				offsetD += 8;
+			}
+
+			//Call the LJM function
+			errorResult = this.ljm.LJM_eAddresses.async(
+				this.handle,
+				numFrames,
+				aAddresses,
+				aTypes,
+				aDirections,
+				aNumWrites,
+				aValues,
+				errorVal,
+				function(err,res) {
+					if(err) throw err;
+					if(res == 0) {
+						onSuccess("YAY");
+					} else {
+						onError(res);
+					}
+				}
+			);
+		} else {
+			onError("Address is not a number or string array");
+		}
+	}
+	/**
+	 * [rwManySync description]
+	 * @param  {[type]} numFrames  [description]
+	 * @param  {[type]} addresses  [description]
+	 * @param  {[type]} directions [description]
+	 * @param  {[type]} numValues  [description]
+	 * @param  {[type]} values     [description]
+	 * @return {[type]}            [description]
+	 *         							LJM driver
+	 * @throws {DriverOperationError} If there is an error produced by calling 
+	 *         							the LJM driver
+	 */
+	this.rwManySync = function(numFrames,addresses,directions,numValues,values) 
+	{
+		var i,j;
+
+		//Check to make sure a device has been opened.
+		this.checkStatus();
+
+		//Return variable
+		var errorResult;
+
+		//Perform function wide buffer allocations:
+		var aDirections = new Buffer(numFrames * 4);//Array of directions
+		var aNumWrites = new Buffer(numFrames * 4);//Array of ops. per frame
+		var aValues = new Buffer(values.length * 8);//Array of doubles
+		var errorVal = new Buffer(4); //Array the size of one UInt32 for err
+
+		//Clear all the arrays
+		aDirections.fill(0);
+		aNumWrites.fill(0);
+		aValues.fill(0);
+		errorVal.fill(0);
+		if(typeof(addresses[0]) == 'string') {
+			//Allocate space for the aNames array
+			var aNames = new Buffer(numFrames * 8);//Array of C-String pointers
+			var offsetD = 0;
+			var offsetI = 0;
+
+			//Populate the array's with data
+			for(i = 0; i < numFrames; i++) {
+				//Fill aDirections array
+				aDirections.writeUInt32LE(directions[i],offsetI);
+
+				//Fill aNumWrites array
+				aNumWrites.writeUInt32LE(numValues[i],offsetI);
+
+				//Fill aNames array
+				var buf = new Buffer(addresses[i].length+1);
+				ref.writeCString(buf,0,addresses[i]);
+				ref.writePointer(aNames,offsetD,buf);
+				//Increment pointers
+				offsetD +=8;
+				offsetI += 4;
+			}
+
+			//Increment & fill the values array separately because it may be of
+			//different length then the rest.
+			offsetD = 0;
+			for(i = 0; i < values.length; i++)
+			{
+				if(typeof(value) == 'number') {
+					aValues.writeDoubleLE(values,offsetD);
+				} else {
+					aValues.writeDoubleLE(0,offsetD);
+				}
+				offsetD += 8;
+			}
+			//Call the LJM function
+			errorResult = this.ljm.LJM_eNames(
+				this.handle,
+				numFrames,
+				aNames,
+				aDirections,
+				aNumWrites,
+				aValues,
+				errorVal
+			);
+
+		} else if(typeof(addresses[0]) == 'number') {
+			//Allocate space for the aNames array
+			var aAddresses = new Buffer(numFrames * 4);//Array of addresses
+			var aTypes = new Buffer(numFrames * 4);//Array of types
+
+			var offsetD = 0;
+			var offsetI = 0;
+
+			//Populate the array's with data
+			for(i = 0; i < numFrames; i++) {
+				//Fill aDirections array
+				aDirections.writeUInt32LE(directions[i],offsetI);
+
+				//Fill aNumWrites array
+				aNumWrites.writeUInt32LE(numValues[i],offsetI);
+
+				//Fill aAddresses array
+				aAddresses.writeUInt32LE(addresses[i],offsetI);
+
+				//Fill aTypes array
+				var info;
+				if(directions[i] == driver_const.LJM_READ) {
+					info = this.constants.getAddressInfo(addresses[i], 'R');
+				} else if (directions[i] == driver_const.LJM_WRITE) {
+					info = this.constants.getAddressInfo(addresses[i], 'W');
+				} else {
+					//Report Error:
+					throw new DriverInterfaceError(
+						{
+							retError:"Invalid Direction", 
+							errFrame:i
+						}
+					);
+				}
+				if(info.directionValid == 1)
+				{
+					aTypes.writeUInt32LE(info.type,offsetI);
+				}
+				else
+				{
+					//Report Error:
+					if(info.type == -1) {
+						throw new DriverInterfaceError(
+							{
+								retError:"Invalid Address", 
+								errFrame:i
+							}
+						);
+						return {retError:"Invalid Address", errFrame:i};
+					} else if (info.directionValid == 0) {
+						throw new DriverInterfaceError(
+							{
+								retError:"Invalid Write Attempt", 
+								errFrame:i
+							}
+						);
+						return {retError:"Invalid Write Attempt", errFrame:i};
+					} else {
+						throw new DriverInterfaceError(
+							{
+								retError:"Weird-Error", 
+								errFrame:i
+							}
+						);
+						return {retError:"Weird-Error", errFrame:i};
+					}
+				}
+
+				//Increment pointers
+				offsetD +=8;
+				offsetI += 4;
+			}
+
+			//Increment & fill the values array separately because it may be of
+			//different length then the rest.
+			offsetD = 0;
+			for(i = 0; i < values.length; i++)
+			{
+				if(typeof(value) == 'number') {
+					aValues.writeDoubleLE(values,offsetD);
+				} else {
+					aValues.writeDoubleLE(0,offsetD);
+				}
+				offsetD += 8;
+			}
+
+			//Call the LJM function
+			errorResult = this.ljm.LJM_eAddresses(
+				this.handle,
+				numFrames,
+				aAddresses,
+				aTypes,
+				aDirections,
+				aNumWrites,
+				aValues,
+				errorVal
+			);
+		} else {
+			throw new DriverInterfaceError(
+				"Address is not a number or string array"
+			);
+			return "Address is not a number or string array";
+		}
+		if(errorResult == 0) {
+			return "YAY";
+		} else {
+			throw new DriverOperationError(errorResult);
+			return errorResult;
+		}
+	}
 	/*
 	this.resetConnection = function()
 	{
@@ -1786,8 +1991,10 @@ exports.labjack = function ()
 	*/
 	/**
 	 * Closes the device if it is currently open using the asynchronous ffi 
-	 * method
+	 * method.
 	 *
+	 * @param {function} onError function called when finishing with an error.
+	 * @param {function} onSuccess function called when finishing successfully.
 	 * @return {number} 
 	 */
 	this.close = function(onError, onSuccess) {
@@ -1817,7 +2024,8 @@ exports.labjack = function ()
 	 * method
 	 *
 	 * @return {number} 
-	 * @throws {DriverInterfaceError} If there has been a closing-error
+	 * @throws {DriverInterfaceError} If there isn't an open device to close
+	 * @throws {DriverOperationError} If there has been a closing-error
 	 */
 	this.closeSync = function() {
 		//Make sure that a device is open
@@ -1834,7 +2042,7 @@ exports.labjack = function ()
 			return output;
 		} else {
 			//REPORT CLOSING ERROR HAS OCCURED
-			throw new DriverInterfaceError("Closing Device Error", output);
+			throw new DriverOperationError("Closing Device Error", output);
 			return output;
 		}
 	}

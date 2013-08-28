@@ -23,8 +23,8 @@ var fakeDriverB
 	}
 };
 function createCallableObject (defaultFunction, asyncFunction) {
-    var retFunction = function (arg0, arg1, arg2, arg3, arg4, arg5, arg6) {
-        return defaultFunction(arg0, arg1, arg2, arg3, arg4, arg5, arg6);
+    var retFunction = function (arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9) {
+        return defaultFunction(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
     };
     retFunction.async = asyncFunction;
     return retFunction;
@@ -405,12 +405,12 @@ var LJM_eWriteNames = createCallableObject(
  * Test-Function for Synchronous and Async Multiple-Operation functionality: 
  */
 var LJM_eAddresses = createCallableObject(
-	function(handle) {
+	function(handle, numFrames, aAddresses, aTypes, aWrites, aNumValues, aValues, ErrorAddress) {
 		lastFunctionCall.push("LJM_eAddresses");
 		argumentsList.push(arguments);
 		return expectedResult
 	},
-	function(handle, callback) {
+	function(handle, numFrames, aAddresses, aTypes, aWrites, aNumValues, aValues, ErrorAddress, callback) {
 		lastFunctionCall.push("LJM_eAddressesAsync");
 		argumentsList.push(arguments);
 		reportEnd(callback);
@@ -419,14 +419,16 @@ var LJM_eAddresses = createCallableObject(
  * Test-Function for Synchronous and Async Multiple-Operation functionality: 
  */
 var LJM_eNames = createCallableObject(
-	function(handle) {
+	function(handle, numFrames, aNames, aWrites, aNumValues, aValues, ErrorAddress) {
 		lastFunctionCall.push("LJM_eNames");
 		argumentsList.push(arguments);
+		console.log("name",arguments);
 		return expectedResult
 	},
-	function(handle, callback) {
+	function(handle, numFrames, aNames, aWrites, aNumValues, aValues, ErrorAddress, callback) {
 		lastFunctionCall.push("LJM_eNamesAsync");
 		argumentsList.push(arguments);
+		console.log("name",arguments);
 		reportEnd(callback);
 	});
 

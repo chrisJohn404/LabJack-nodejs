@@ -1017,7 +1017,50 @@ module.exports = {
 	 * @param  {[type]} test [description]
 	 */
 	testRWMany: function(test) {
-		test.done();
+		//Configure running-engines
+		asyncRun.config(dev, null);
+		syncRun.config(dev, null);
+
+		var numAddresses = 2;
+		//Create test-variables
+		//rwMany(numFrames,addresses,directions,numValues,values
+		var testList = [
+			'rwMany(2,[0,2],[0,0],[1,1],[null,null])',
+			'rwMany(2,["AIN0","AIN2"],[0,0],[1,1],[null,null])',
+		];
+
+		//Expected info combines both sync & async
+		var expectedFunctionList = [ 
+		];
+		//Expected info combines both sync & async
+		var expectedResultList = [
+		];
+
+		//Run the desired commands
+		syncRun.run(testList);
+		asyncRun.run(testList,
+			function(res) {
+				//Error
+			}, function(res) {
+				//Success
+				var funcs = fakeDriver.getLastFunctionCall();
+				var results = asyncRun.getResults();
+				var argList = fakeDriver.getArgumentsList();
+				var i,j;
+				var offsetSync = 1;		
+
+				console.log("Function Calls", funcs);
+				console.log("Results",results);
+				console.log("Arguments",argList);
+				
+				//Test to make sure the proper functions were called
+				// test.deepEqual(expectedFunctionList,funcs);
+
+				//test to make sure the proper results were acquired
+				// test.deepEqual(expectedResultList,results);
+
+				test.done();
+			});	
 	},
 
 	/**

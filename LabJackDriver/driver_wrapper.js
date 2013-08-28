@@ -240,7 +240,7 @@ var liblabjack = ffi.Library('/usr/local/lib/libLabJackM-'+driver_const.LJM_DRVR
  				'int',							//NumFrames
  				ref.refType(ref.types.int),		//aAddresses
  				ref.refType(ref.types.int), 	//aTypes
- 				ref.refType(ref.types.int),		//aWrites
+ 				ref.refType(ref.types.int),		//aWrites (Directions)
  				ref.refType(ref.types.int),		//aNumValues
  				ref.refType(ref.types.double),	//aValues
  				ref.refType(ref.types.int)		//ErrorAddress
@@ -251,7 +251,7 @@ var liblabjack = ffi.Library('/usr/local/lib/libLabJackM-'+driver_const.LJM_DRVR
  				'int',							//Handle
  				'int',							//NumFrames
  				ref.refType('string'),			//aNames
- 				ref.refType(ref.types.int),		//aWrites
+ 				ref.refType(ref.types.int),		//aWrites (Directions)
  				ref.refType(ref.types.int),		//aNumValues
  				ref.refType(ref.types.double),	//aValues
  				ref.refType(ref.types.int)		//ErrorAddress
