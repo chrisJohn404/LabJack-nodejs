@@ -63,7 +63,7 @@ function cPointerEqualsArray(test, expected, actual) {
 	}
 }
 
-exports.createCallSequenceChecker = function (functionNames, expectedParamDict) {
+exports.createCallSequenceChecker = function (expectedFunctionNames, expectedParamDict) {
 
 	var getNextExpectedParam = function (paramName) {
 		return expectedParamDict[paramName].shift();
@@ -80,7 +80,7 @@ exports.createCallSequenceChecker = function (functionNames, expectedParamDict) 
 			var strategyName;
 			var strategy;
 
-			nextFunctionName = functionNames.shift();
+			nextFunctionName = expectedFunctionNames.shift();
 			if(nextFunctionName !== null)
 				test.equal(nextFunctionName, calledFunctionName);
 
@@ -95,7 +95,7 @@ exports.createCallSequenceChecker = function (functionNames, expectedParamDict) 
 		}
 	};
 
-	var callCheckers = functionNames.map(function (e) { return createCallChecker(e); });
+	var callCheckers = expectedFunctionNames.map(function (e) { return createCallChecker(e); });
 
 	return function (test, calledFunctionNames, passedArgsVector) {
 		var numCallCheckers = callCheckers.length;

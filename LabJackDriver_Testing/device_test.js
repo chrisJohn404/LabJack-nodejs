@@ -914,54 +914,7 @@ module.exports = {
 				);
 
 				checker(test, funcs, argList.slice(1,argList.length));
-				//Test to make sure the proper arguments were supplied
-				//Slightly confusing to read.... not sure how to fix
-				// var numCalls = argList.length;
-				// for(i = 1; i < numCalls; i++) {
-				// 	//Length Variable
-				// 	test.equal(argList[i][1],numAddresses);
-
-				// 	//check for callback
-				// 	if(i < testList.length + 1) {
-				// 		//Sync function
-				// 		test.notStrictEqual(typeof(argList[i][argList[i].length-1]),'function');
-				// 	} else {
-				// 		//Async function
-				// 		test.equal(typeof(argList[i][argList[i].length-1]),'function');
-				// 	}
-
-				// 	//Check for special arguments
-				// 	if(funcs[i-1].search('Names') != -1) {
-				// 		//Names function, 1.de-reference the ptr 2.get c-str:
-				// 		var buffer = argList[i][2];
-				// 		for(j = 0; j < numAddresses; j++) {
-				// 			var namePtr = ref.readPointer(buffer,j*8,50);
-				// 			test.equal(ref.readCString(namePtr,0),namesList[j])
-				// 		}
-				// 		//Values
-				// 		for(j = 0; j < numAddresses; j++) {
-				// 			test.equal(argList[i][3].readDoubleLE(j*8),writtenValuesList[j]);
-				// 		}
-				// 		//Error
-				// 		test.equal(argList[i][4].length,4);
-				// 	} else {
-				// 		//Addresses function:
-				// 		//Addresses
-				// 		for(j = 0; j < numAddresses; j++) {
-				// 			test.equal(argList[i][2].readUInt32LE(j*4),addressesList[j]);
-				// 		}
-				// 		//Types
-				// 		for(j = 0; j < numAddresses; j++) {
-				// 			test.equal(argList[i][3].readUInt32LE(j*4),typesList[j]);
-				// 		}
-				// 		//Values
-				// 		for(j = 0; j < numAddresses; j++) {
-				// 			test.equal(argList[i][4].readDoubleLE(j*8),writtenValuesList[j]);
-				// 		}
-				// 		//Error
-				// 		test.equal(argList[i][5].length,4);
-				// 	}
-				// }
+				
 				test.done();
 			});	
 	},
@@ -1036,51 +989,93 @@ module.exports = {
 	 * @param  {[type]} test [description]
 	 */
 	testRWMany: function(test) {
+		var highestReadVal = 9;;
+		fakeDriver.setResultArg(highestReadVal);
+
 		//Configure running-engines
-		// asyncRun.config(dev, null);
-		// syncRun.config(dev, null);
+		asyncRun.config(dev, null);
+		syncRun.config(dev, null);
 
-		// var numAddresses = 2;
-		// //Create test-variables
-		// //rwMany(numFrames,addresses,directions,numValues,values
-		// var testList = [
-		// 	'rwMany(2,[0,2],[0,0],[1,1],[null,null])',
-		// 	'rwMany(2,["AIN0","AIN2"],[0,0],[1,1],[null,null])',
-		// ];
+		var numAddresses = 2;
+		//Create test-variables
+		//rwMany(numFrames,addresses,directions,numValues,values
+		var testList = [
+			'rwMany(2,[0,2],[0,0],[1,1],[null,null])',
+			'rwMany(2,["AIN0","AIN2"],[0,0],[1,1],[null,null])',//2 frames, read AIN's, 1read/frame, null's
+			'rwMany(3,[0,2,1000],[0,0,1],[1,1,1],[null,null,2.5])',
+			'rwMany(2,[0,1000],[0,1],[2,1],[null,null,2.5])',
+			'rwMany(2,[0,1000],[0,1],[1,1],[null,2.5])',
+			'rwMany(2,[1000,0],[1,0],[1,1],[2.5,null])',
+			'rwMany(2,[1000,0],[1,0],[2,1],[2.5,2.5,null])',
+			'rwMany(2,["DAC0","AIN0"],[1,0],[2,2],[2.5,2.5,null,null])',
+		];
 
-		// //Expected info combines both sync & async
-		// var expectedFunctionList = [ 
-		// ];
-		// //Expected info combines both sync & async
-		// var expectedResultList = [
-		// ];
+		//Expected info combines both sync & async
+		var expectedFunctionList = [ 
+			'LJM_eAddresses',
+			'LJM_eNames',
+			'LJM_eAddresses',
+			'LJM_eAddresses',
+			'LJM_eAddresses',
+			'LJM_eAddresses',
+			'LJM_eAddresses',
+			'LJM_eNames',
+			'LJM_eAddressesAsync',
+			'LJM_eNamesAsync',
+			'LJM_eAddressesAsync',
+			'LJM_eAddressesAsync',
+			'LJM_eAddressesAsync',
+			'LJM_eAddressesAsync',
+			'LJM_eAddressesAsync',
+			'LJM_eNamesAsync'
+		];
+		//Expected info combines both sync & async
+		var expectedResultList = [
+			[ 9, 8 ],
+			[ 9, 8 ],
+			[ 9, 8 ],
+			[ 9, 8 ],
+			[ 9 ],
+			[ 8 ],
+			[ 7 ],
+			[ 7, 6 ],
+			[ 9, 8 ],
+			[ 9, 8 ],
+			[ 9, 8 ],
+			[ 9, 8 ],
+			[ 9 ],
+			[ 8 ],
+			[ 7 ],
+			[ 7, 6 ]
+		];
 
-		// //Run the desired commands
-		// syncRun.run(testList);
-		// asyncRun.run(testList,
-		// 	function(res) {
-		// 		//Error
-		// 	}, function(res) {
-		// 		//Success
-		// 		var funcs = fakeDriver.getLastFunctionCall();
-		// 		var results = asyncRun.getResults();
-		// 		var argList = fakeDriver.getArgumentsList();
-		// 		var i,j;
-		// 		var offsetSync = 1;		
+		//Run the desired commands
+		console.log('Run-Sync');
+		syncRun.run(testList);
+		console.log('Run-Async');
+		asyncRun.run(testList,
+			function(res) {
+				//Error
+			}, function(res) {
+				//Success
+				var funcs = fakeDriver.getLastFunctionCall();
+				var results = asyncRun.getResults();
+				var argList = fakeDriver.getArgumentsList();
+				var i,j;
+				var offsetSync = 1;		
 
-		// 		console.log("Function Calls", funcs);
-		// 		console.log("Results",results);
-		// 		console.log("Arguments",argList);
+				console.log("Function Calls", funcs);
+				console.log("Results",results);
+				// console.log("Arguments",argList);
 				
-		// 		//Test to make sure the proper functions were called
-		// 		// test.deepEqual(expectedFunctionList,funcs);
+				//Test to make sure the proper functions were called
+				test.deepEqual(expectedFunctionList,funcs);
 
-		// 		//test to make sure the proper results were acquired
-		// 		// test.deepEqual(expectedResultList,results);
+				//test to make sure the proper results were acquired
+				test.deepEqual(expectedResultList,results);
 
-		// 		test.done();
-		// 	});	
-		test.done();
+				test.done();
+			});	
 	},
 
 	/**

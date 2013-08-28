@@ -401,6 +401,29 @@ var LJM_eWriteNames = createCallableObject(
 //******************************************************************************
 //*********************		Advanced I/O Functions	****************************
 //******************************************************************************
+var populateValues = function(numFrames, aWrites, aNumValues, aValues) {
+	var intOffset = 0;
+	var doubleOffset = 0;
+	var resOffset = 0;
+	for(var i = 0; i < numFrames; i++) {
+		var numOps = aNumValues.readUInt32LE(i*4);
+		//console.log(numOps,intOffset, doubleOffset,aValues.length);
+		for(var j = 0; j < numOps; j++) {
+			if(aWrites.readUInt32LE(intOffset) == driver_const.LJM_READ) {
+				aValues.writeDoubleLE(expectedResultArg-resOffset,doubleOffset);
+			} else {
+				aValues.writeDoubleLE(-1,doubleOffset);
+			}
+			doubleOffset += 8;
+			resOffset +=1;
+		}
+		intOffset += 4;
+	}
+	// for(var i = 0; i < aValues.length/8; i++) {
+	// 	console.log(aValues.readDoubleLE(i*8));
+	// }
+}
+
 /**
  * Test-Function for Synchronous and Async Multiple-Operation functionality: 
  */
@@ -408,11 +431,14 @@ var LJM_eAddresses = createCallableObject(
 	function(handle, numFrames, aAddresses, aTypes, aWrites, aNumValues, aValues, ErrorAddress) {
 		lastFunctionCall.push("LJM_eAddresses");
 		argumentsList.push(arguments);
+		populateValues(numFrames, aWrites, aNumValues, aValues);		
+		// console.log("Addr",arguments);
 		return expectedResult
 	},
 	function(handle, numFrames, aAddresses, aTypes, aWrites, aNumValues, aValues, ErrorAddress, callback) {
 		lastFunctionCall.push("LJM_eAddressesAsync");
 		argumentsList.push(arguments);
+		populateValues(numFrames, aWrites, aNumValues, aValues);
 		reportEnd(callback);
 	});
 /**
@@ -422,13 +448,13 @@ var LJM_eNames = createCallableObject(
 	function(handle, numFrames, aNames, aWrites, aNumValues, aValues, ErrorAddress) {
 		lastFunctionCall.push("LJM_eNames");
 		argumentsList.push(arguments);
-		console.log("name",arguments);
+		populateValues(numFrames, aWrites, aNumValues, aValues);
 		return expectedResult
 	},
 	function(handle, numFrames, aNames, aWrites, aNumValues, aValues, ErrorAddress, callback) {
 		lastFunctionCall.push("LJM_eNamesAsync");
 		argumentsList.push(arguments);
-		console.log("name",arguments);
+		populateValues(numFrames, aWrites, aNumValues, aValues);
 		reportEnd(callback);
 	});
 

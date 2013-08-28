@@ -15,7 +15,7 @@ var wait = false;
 var runTime = 0;
 var activeTest = 0;
 
-testComplete = true;
+var testComplete = true;
 
 var pRes = false;
 var pCmd = false;

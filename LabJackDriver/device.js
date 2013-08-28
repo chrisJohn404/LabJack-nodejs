@@ -1567,6 +1567,31 @@ exports.labjack = function ()
 	}
 
 	/**
+	 * Helper function for returning the proper array of data when using the 
+	 * rwMany function call.  Throws out written data & builds an array of only 
+	 * data read by the driver.
+	 * 
+	 * @param  {number} numFrames  the number of frames sent.
+	 * @param  {number-array} numValues     the number-array configured by user.
+	 * @param  {number-array} directions array of read/write directions.
+	 * @param  {Buffer} aValues    Data passed back by the LJM driver.
+	 * @return {number-array}            an array of data that was read by the 
+	 *                                   LJM driver throws out the written data.
+	 */
+	this.populateRWManyArray = function(numFrames, numValues, directions, aValues) {
+		var returnArray = [];
+		var offset = 0;
+		for(var i = 0; i < numFrames; i++) {
+			for(var j = 0; j < numValues[i]; j++) {
+				if(directions[i] == driver_const.LJM_READ) {
+					returnArray.push(aValues.readDoubleLE(offset));
+				}
+				offset +=8;
+			}			
+		}
+		return returnArray;
+	}
+	/**
 	 * [rwMany description]
 	 * @param  {[type]} numFrames  [description]
 	 * @param  {[type]} addresses  [description]
@@ -1579,12 +1604,12 @@ exports.labjack = function ()
 	this.rwMany = function(numFrames,addresses,directions,numValues,values,onError,onSuccess) 
 	{
 		var i,j;
-
 		//Check to make sure a device has been opened.
 		this.checkStatus();
-
+		
 		//Return variable
 		var errorResult;
+
 
 		//Perform function wide buffer allocations:
 		var aDirections = new Buffer(numFrames * 4);//Array of directions
@@ -1599,11 +1624,13 @@ exports.labjack = function ()
 		errorVal.fill(0);
 
 		if(typeof(addresses[0]) == 'string') {
+
+			
 			//Allocate space for the aNames array
 			var aNames = new Buffer(numFrames * 8);//Array of C-String pointers
 			var offsetD = 0;
 			var offsetI = 0;
-
+			
 			//Populate the array's with data
 			for(i = 0; i < numFrames; i++) {
 				//Fill aDirections array
@@ -1636,6 +1663,7 @@ exports.labjack = function ()
 			}
 
 			//Call the LJM function
+			var self = this;
 			errorResult = this.ljm.LJM_eNames.async(
 				this.handle,
 				numFrames,
@@ -1647,7 +1675,14 @@ exports.labjack = function ()
 				function(err,res) {
 					if(err) throw err;
 					if(res == 0) {
-						onSuccess("YAY");
+						onSuccess(
+							self.populateRWManyArray(
+								numFrames, 
+								numValues, 
+								directions, 
+								aValues
+							)
+						);
 					} else {
 						onError(res);
 					}
@@ -1740,6 +1775,7 @@ exports.labjack = function ()
 			}
 
 			//Call the LJM function
+			var self = this;
 			errorResult = this.ljm.LJM_eAddresses.async(
 				this.handle,
 				numFrames,
@@ -1752,7 +1788,14 @@ exports.labjack = function ()
 				function(err,res) {
 					if(err) throw err;
 					if(res == 0) {
-						onSuccess("YAY");
+						onSuccess(
+							self.populateRWManyArray(
+								numFrames, 
+								numValues, 
+								directions, 
+								aValues
+							)
+						);
 					} else {
 						onError(res);
 					}
@@ -1945,7 +1988,12 @@ exports.labjack = function ()
 			return "Address is not a number or string array";
 		}
 		if(errorResult == 0) {
-			return "YAY";
+			return this.populateRWManyArray(
+						numFrames, 
+						numValues, 
+						directions, 
+						aValues
+					);
 		} else {
 			throw new DriverOperationError(errorResult);
 			return errorResult;
