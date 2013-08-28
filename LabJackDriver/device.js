@@ -1424,13 +1424,13 @@ exports.labjack = function ()
 	 * LJM_eWriteNames given appropriate input variables.
 	 * 
 	 * @param  {number/string-array} addresses A number or string array of 
-	 *                               		   addresses/names to be called.
+	 *         addresses/names to be called.
 	 * @param  {number-array} values    An array of values to write.
 	 * @return {number/string}           0 on success, string on error.
 	 * @throws {DriverInterfaceError} If there is an error produced before 
-	 *         							calling the LJM function.
+	 *         calling the LJM function.
 	 * @throws {DriverOperationError} If There is an error produced during the 
-	 *         							LJM driver function.
+	 *         LJM driver function.
 	 */
 	this.writeManySync = function(addresses, values) {
 		//Check to make sure a device has been opened.

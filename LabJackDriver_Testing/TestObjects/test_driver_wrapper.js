@@ -23,8 +23,8 @@ var fakeDriverB
 	}
 };
 function createCallableObject (defaultFunction, asyncFunction) {
-    var retFunction = function (arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9) {
-        return defaultFunction(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
+    var retFunction = function () {
+        return defaultFunction.apply(this, arguments);
     };
     retFunction.async = asyncFunction;
     return retFunction;
