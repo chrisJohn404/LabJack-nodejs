@@ -103,6 +103,7 @@ exports.run = function(testList)
 	functionList = testList;
 	runTest();
 	
+	
 	/*console.log('Starting Async-Test');
 
 	var device = new deviceManager.labjack();
