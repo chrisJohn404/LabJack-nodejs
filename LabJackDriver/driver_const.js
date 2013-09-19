@@ -137,3 +137,5 @@ exports.LJM_UINT16 = 0; 									// C type of unsigned short
 exports.LJM_UINT32 = 1; 									// C type of unsigned int
 exports.LJM_INT32 = 2; 										// C type of int
 exports.LJM_FLOAT32 = 3; 									// C type of float
+exports.LJM_STRING = 98;                                    // C type of c-String
+exports.LJM_BYTE = 99;                                      // C type of unsigned char

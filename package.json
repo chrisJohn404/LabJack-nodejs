@@ -6,9 +6,11 @@
 		"url": "http://labjack.com"
 	},
 	"dependencies": {
+		"async": "~0",
 		"ffi": "~1",
 		"optimist": "~0",
 		"ref": "~0",
-		"rewire": "~1"
+		"rewire": "~1",
+		"ljmmm-parse": "~0"
 	}
 }

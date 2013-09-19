@@ -14,8 +14,12 @@
 var fs = require('fs');				//Load File System module
 var os = require('os');				//Load OS module
 
+var async = require('async');
+var ljmmm_parse = require('ljmmm-parse');
+
 var utilities = require('./utils');	//Load module for sscanf
 var driver_const = require('./driver_const');
+
 
 //Important constants:
 // console.log(os.hostname());
@@ -86,58 +90,38 @@ function getTypeSizeInRegisters(typeName)
 {
 	return getTypeSize(typeName) / 2;
 }
+
+function zipArraysToObject(keys, values)
+{
+	var retObj = {};
+	var numKeys = keys.length;
+	
+	for (var i=0; i<numKeys; i++) {
+		retObj[keys[i]] = values[i];
+	}
+
+	return retObj;
+}
+
 //Function that re-indexes the .json File Constants by their register
 function reindexConstantsByRegister(constants)
 {
-	var regInfo;
-	var typeSize;
-	var regEntry;
-	var numValues;
-	var retDict;
-	var regNum;
+	var numConstantsEntries = constants.length;
+	var expandedConstants = [];
+	var entry;
+	var regAddresses;
+	var regNames;
 
-	retDict = {};
-	retDictName = {};
+	expandedConstants.
 
-	for(var i in constants.registers)
-	{
-		//Get the Entry
-		regEntry = constants.registers[i];
+	regAddresses = expandedConstants.map(function (e) { return e.address; });
+	regNames = expandedConstants.map(function (e) { return e.name; });
 
-		//Create a regInfo object containing the start and end values
-		regInfo = parseRegisterNameString(regEntry.name);
+	console.log(regAddresses);
 
-		//Get the size
-		typeSize = getTypeSizeInRegisters(regEntry.type);
+	retDict = zipArraysToObject(regAddresses, expandedConstants);
+	retDictName = zipArraysToObject(regNames, expandedConstants);
 
-		//Determine how many values to add
-		//numValues = (regInfo.endNum - regInfo.startNum)/2+1;
-		numValues = regInfo.endNum+1;
-
-		//The starting register number
-		regNum=regEntry.address;
-		for(var j=0; j<numValues; j++)
-		{
-			retDict[regNum] = regEntry;
-			regNum += typeSize;
-			//retDictName[.push({
-			//				key: regEntry.name,
-			//				value: regEntry
-			//			});]
-			if(numValues > 1)
-			{
-				retDictName[regInfo.name+j.toString()+regInfo.nameEnd] = regEntry;
-			}
-			else
-			{
-				retDictName[regInfo.name+regInfo.nameEnd] = regEntry;
-			}
-			//if(numValues>1)
-			//{
-			//	console.log(regInfo.name+j.toString()+regInfo.nameEnd);
-			//}
-		}
-	}
 	//Add Extra Special Registers that don't live in the json file
 	retDict[driver_const.T7_MA_EXF_KEY] = {
 		address:driver_const.T7_MA_EXF_KEY,
@@ -241,6 +225,7 @@ var parseConstants = function(LJMJSONFileLocation, privLocation) {
 	
 	var indexedConstants = reindexConstantsByRegister(constantsData);
 	this.constantsByRegister = indexedConstants[0];
+	console.log(this.constantsByRegister);
 	this.constantsByName = indexedConstants[1];
 
 	//console.log("JSON-CONSTANTS-PARSER");
@@ -258,10 +243,12 @@ var parseConstants = function(LJMJSONFileLocation, privLocation) {
 		if(typeof(address)=="number")
 		{
 			regEntry = this.constantsByRegister[address];
+			resolvedAddress = address;
 		}
 		else if(typeof(address)=="string")
 		{
 			regEntry = this.constantsByName[address];
+			resolvedAddress = regEntry.address;
 			//console.log(this.constantsByName);
 		}
 		//Create a deviceType Variable to save the deviceType number into
@@ -304,7 +291,7 @@ var parseConstants = function(LJMJSONFileLocation, privLocation) {
 			validity = 0;
 		}
 		
-		return {type: deviceType, directionValid: validity, typeString: regEntry.type};
+		return {type: deviceType, directionValid: validity, typeString: regEntry.type, address: resolvedAddress};
 	}
 }
 
