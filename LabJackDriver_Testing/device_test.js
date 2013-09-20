@@ -346,10 +346,12 @@ module.exports = {
 			"TEST",
 		];
 		syncRun.run(testList);
+		console.log('finishedSync');
 		asyncRun.run(testList,
 			function(res) {
 				//Error, should never be called.... isn't ever used... woops....
 			}, function(res) {
+				console.log('finishedAsync');
 				//Success				
 				var funcs = fakeDriver.getLastFunctionCall();
 				var results = asyncRun.getResults();

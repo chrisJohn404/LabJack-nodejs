@@ -112,12 +112,10 @@ function reindexConstantsByRegister(constants)
 	var regAddresses;
 	var regNames;
 
-	expandedConstants.
+	expandedConstants = ljmmm_parse.expandLJMMMEntriesSync(constants);
 
 	regAddresses = expandedConstants.map(function (e) { return e.address; });
 	regNames = expandedConstants.map(function (e) { return e.name; });
-
-	console.log(regAddresses);
 
 	retDict = zipArraysToObject(regAddresses, expandedConstants);
 	retDictName = zipArraysToObject(regNames, expandedConstants);
@@ -225,7 +223,6 @@ var parseConstants = function(LJMJSONFileLocation, privLocation) {
 	
 	var indexedConstants = reindexConstantsByRegister(constantsData);
 	this.constantsByRegister = indexedConstants[0];
-	console.log(this.constantsByRegister);
 	this.constantsByName = indexedConstants[1];
 
 	//console.log("JSON-CONSTANTS-PARSER");
