@@ -9,7 +9,7 @@
 		"name": "Sam Pottinger",
 		"url": "http://gleap.org"
 	},
-	"main": "./lib/",
+	"main": "./lib/device",
 	"license": "GNU GPL v3",
 	"keywords": [
         "LabJack",
