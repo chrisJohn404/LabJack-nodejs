@@ -9,6 +9,22 @@
 		"name": "Sam Pottinger",
 		"url": "http://gleap.org"
 	},
+	"main": "./lib/",
+	"license": "GNU GPL v3",
+	"keywords": [
+        "LabJack",
+        "LJMMM",
+        "MODBUS",
+        "T7"
+    ],
+    "homepage": "https://github.com/chrisJohn404/LabJack-nodejs",
+    "repository": {
+        "type" : "git",
+        "url" : "https://github.com/chrisJohn404/LabJack-nodejs.git"
+    },
+    "files": [
+        "lib"
+    ],
 	"dependencies": {
 		"async": "~0",
 		"ffi": "~1",
