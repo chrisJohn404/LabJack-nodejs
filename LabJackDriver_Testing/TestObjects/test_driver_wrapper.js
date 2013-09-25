@@ -231,7 +231,9 @@ var LJM_eReadAddresses = createCallableObject(
 	},
 	function(handle, length, addresses, types, results, errors, callback) {
 		lastFunctionCall.push("LJM_eReadAddressesAsync");
+		// console.log('Yodles\n',arguments);
 		argumentsList.push(arguments);
+		// console.log('ArgList\n',argumentsList);
 		var numReads = addresses.length;
 		if(addresses.length != types.length) {
 			console.log('ERROR!!!', numReads, types.length);

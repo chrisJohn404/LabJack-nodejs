@@ -48,48 +48,6 @@ var typeSizes = {
 function JSONParsingError(description) {
 	this.description = description;
 };
-function parseRegisterNameString(name)
-{
-	//var pString = constants.registers[i].name;
-	var pString = name;
-	var nameString;
-	var index = pString.indexOf('#');
-	var result = new Array();
-	//var result = utilities.sscanf(pString,'AIN#(%d:%d)');
-	if(index != -1)
-	{
-		nameString = pString.slice(0,index);
-		pString = pString.slice(index);
-		result = utilities.sscanf(pString,'#(%d:%d)%s');
-		if(result[2] == null)
-		{
-			result[2]='';
-		}
-		
-	}
-	else
-	{
-		result[0] = 0;
-		result[1] = 0;
-		nameString = name;
-		result[2] = '';
-	}
-
-	return {startNum: result[0], endNum: result[1], name: nameString, nameEnd: result[2]};
-}
-
-function getTypeSize(typeName)
-{
-	var size = typeSizes[typeName];
-	if(size === undefined)
-		throw "Unknown type"; // TODO: Need better error
-	return size;
-}
-
-function getTypeSizeInRegisters(typeName)
-{
-	return getTypeSize(typeName) / 2;
-}
 
 function zipArraysToObject(keys, values)
 {
@@ -112,9 +70,9 @@ function reindexConstantsByRegister(constants)
 	var regAddresses;
 	var regNames;
 
-	expandedConstants = ljmmm_parse.expandLJMMMEntriesSync(constants);
+	expandedConstants = ljmmm_parse.expandLJMMMEntriesSync(constants.registers);
 
-	regAddresses = expandedConstants.map(function (e) { return e.address; });
+	regAddresses = expandedConstants.map(function (e) { return parseInt(e.address); });
 	regNames = expandedConstants.map(function (e) { return e.name; });
 
 	retDict = zipArraysToObject(regAddresses, expandedConstants);
@@ -226,15 +184,9 @@ var parseConstants = function(LJMJSONFileLocation, privLocation) {
 	this.constantsByName = indexedConstants[1];
 
 	//console.log("JSON-CONSTANTS-PARSER");
-	this.getInfo = function(address) {
-		var info;
-		return info;
-	}
-	this.search = function(address) {
-		return address;
-	}
 	this.getAddressInfo = function(address, direction)
 	{
+
 		var regEntry;
 		//Get the Dictionary Entry
 		if(typeof(address)=="number")
@@ -245,7 +197,12 @@ var parseConstants = function(LJMJSONFileLocation, privLocation) {
 		else if(typeof(address)=="string")
 		{
 			regEntry = this.constantsByName[address];
-			resolvedAddress = regEntry.address;
+			try {
+				resolvedAddress = regEntry.address;
+			}
+			catch (e) {
+				return {type: -1, directionValid: 0, typeString: "NA"};
+			}
 			//console.log(this.constantsByName);
 		}
 		//Create a deviceType Variable to save the deviceType number into

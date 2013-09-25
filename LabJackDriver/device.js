@@ -536,10 +536,9 @@ exports.labjack = function ()
 		var result = new ref.alloc('double',1);
 		var info = this.constants.getAddressInfo(address, 'R');
 		var expectedReturnType = info.type;
-		var isReturningString = expectedReturnType == this.constants.LJM_STRING;
+		var isReturningString = expectedReturnType == driver_const.LJM_STRING;
 		var isDirectionValid = info.directionValid == 1;
 		var resolvedAddress = info.address;
-
 		if (isDirectionValid && !isReturningString) {
 			//Perform a eReadName operation
 			
@@ -613,7 +612,7 @@ exports.labjack = function ()
 
 		var info = this.constants.getAddressInfo(address, 'R');
 		var expectedReturnType = info.type;
-		var isReturningString = expectedReturnType == this.constants.LJM_STRING;
+		var isReturningString = expectedReturnType == driver_const.LJM_STRING;
 		var isDirectionValid = info.directionValid == 1;
 		var resolvedAddress = info.address;
 
@@ -699,7 +698,7 @@ exports.labjack = function ()
 		// TODO: Clean this up.
 
 		//Check to make sure a device has been opened
-		this.checkStatus();
+		if (this.checkStatus(onError)) { return; };
 
 		//Check to make sure that addresses is an Array instance
 		if(!(addresses instanceof Array)) {
@@ -732,7 +731,7 @@ exports.labjack = function ()
 		for (var i=0; i<length; i++) {
 			var address = addresses[i];
 
-			info = constants.getAddressInfo(address, 'R')
+			info = constants.getAddressInfo(address, 'R');
 			if (info.directionValid == 1) {
 				addrTypeBuff.writeInt32LE(info.type,offset);
 				addrBuff.writeInt32LE(info.address,offset);
@@ -748,7 +747,6 @@ exports.labjack = function ()
 				return -1;
 			}
 		}
-
 		errorResult = this.ljm.LJM_eReadAddresses.async(
 			this.handle, 
 			length, 
@@ -916,7 +914,7 @@ exports.labjack = function ()
 	 */
 	this.writeRaw = function(data, onError, onSuccess) {
 		//Check to make sure a device has been opened
-		this.checkStatus();
+		if (this.checkStatus(onError)) { return; };
 
 		if(!(data instanceof Array)) {
 			console.log('WriteRaw-Err, data not an array');
@@ -1003,7 +1001,7 @@ exports.labjack = function ()
 	 */
 	this.write = function(address, value, onError, onSuccess) {
 		//Check to make sure a device has been opened
-		this.checkStatus();
+		if (this.checkStatus(onError)) { return; };
 
 		//Decision making for address type (string or number)
 		if (typeof(address) == 'string') {
@@ -1270,8 +1268,8 @@ exports.labjack = function ()
 	 *		This function will not pass any arugments to this callback.
 	 */
 	this.writeMany = function (addresses, values, onError, onSuccess) {
-		//Check to make sure a device has been opened.
-		this.checkStatus();
+		//Check to make sure a device has been opened
+		if (this.checkStatus(onError)) { return; };
 
 		if(!(addresses instanceof Array)) {
 			onError('Addresses must be of type Array');
@@ -1576,37 +1574,27 @@ exports.labjack = function ()
 		}
 		return returnArray;
 	}
-
-	/**
-	 * Read and write many addresses in a single driver call.
-	 *
-	 * @param {array} addresses Array of registers to write to. This function
-	 *		interprets a collection of numbers as a collection of addresses
-	 *		but interprets a string as a collection of register names.
-	 * @param {array} directions Array of read/write directions. Each element
-	 *		should be a number indicating the direction of the operation (read
-	 *		or write).
-	 * @param {array} values An array of values to send to the device. The array
-	 *		size should be the size of the addresses array. The input data type
-	 *		of each value is a double (number), and they will be converted into
-	 *		the data type passed in types.
-	 * @param {fuction} onError Function to call if an error is encountered
-	 *		during this operation.
-	 * @param {funcion} onSuccess Function to call after this operation
-	 *		completes.
+/**
+	 * [rwMany description]
+	 * @param  {[type]} numFrames  [description]
+	 * @param  {[type]} addresses  [description]
+	 * @param  {[type]} directions [description]
+	 * @param  {[type]} numValues  [description]
+	 * @param  {[type]} values     [description]
+	 * @param  {[type]} onError    [description]
+	 * @param  {[type]} onSuccess  [description]
 	 */
-	this.rwMany = function(addresses, directions, values, onError, onSuccess) 
+	this.rwMany = function(addresses,directions,numValues,values,onError,onSuccess) 
 	{
+		//Check to make sure a device has been opened
+		if (this.checkStatus(onError)) { return; };
+
 		var i,j;
-
 		var numFrames = addresses.length;
-		var numValues = values.length;
-
-		//Check to make sure a device has been opened.
-		this.checkStatus();
 		
 		//Return variable
 		var errorResult;
+
 
 		//Perform function wide buffer allocations:
 		var aDirections = new Buffer(numFrames * 4);//Array of directions
@@ -1745,11 +1733,11 @@ exports.labjack = function ()
 					} else {
 						throw new DriverInterfaceError(
 							{
-								retError:"Unexpected Error", 
+								retError:"Weird-Error", 
 								errFrame:i
 							}
 						);
-						return {retError:"Unexpected Error", errFrame:i};
+						return {retError:"Weird-Error", errFrame:i};
 					}
 				}
 
@@ -1802,33 +1790,22 @@ exports.labjack = function ()
 			onError("Address is not a number or string array");
 		}
 	}
-
 	/**
-	 * Synchronous version of rwMany.
-	 *
-	 * @param {array} addresses Array of registers to write to. This function
-	 *		interprets a collection of numbers as a collection of addresses
-	 *		but interprets a string as a collection of register names.
-	 * @param {array} directions Array of read/write directions. Each element
-	 *		should be a number indicating the direction of the operation (read
-	 *		or write).
-	 * @param {array} values An array of values to send to the device. The array
-	 *		size should be the size of the addresses array. The input data type
-	 *		of each value is a double (number), and they will be converted into
-	 *		the data type passed in types.
+	 * [rwManySync description]
+	 * @param  {[type]} numFrames  [description]
+	 * @param  {[type]} addresses  [description]
+	 * @param  {[type]} directions [description]
+	 * @param  {[type]} numValues  [description]
+	 * @param  {[type]} values     [description]
+	 * @return {[type]}            [description]
+	 *         							LJM driver
 	 * @throws {DriverOperationError} If there is an error produced by calling 
-	 * 		the LJM driver
-	 * @return {array} Array of number read from the device during this
-	 *		operation. While floating point values are interepreted, string
-	 *		values are not.
+	 *         							the LJM driver
 	 */
-	this.rwManySync = function(addresses, directions, values) 
+	this.rwManySync = function(addresses,directions,numValues,values) 
 	{
 		var i,j;
-
 		var numFrames = addresses.length;
-		var numValues = values.length;
-
 		//Check to make sure a device has been opened.
 		this.checkStatus();
 
@@ -1913,7 +1890,7 @@ exports.labjack = function ()
 
 				//Fill aTypes array
 				var info;
-				if (directions[i] == driver_const.LJM_READ) {
+				if(directions[i] == driver_const.LJM_READ) {
 					info = this.constants.getAddressInfo(addresses[i], 'R');
 				} else if (directions[i] == driver_const.LJM_WRITE) {
 					info = this.constants.getAddressInfo(addresses[i], 'W');
@@ -1926,9 +1903,12 @@ exports.labjack = function ()
 						}
 					);
 				}
-				if (info.directionValid == 1) {
+				if(info.directionValid == 1)
+				{
 					aTypes.writeUInt32LE(info.type,offsetI);
-				} else {
+				}
+				else
+				{
 					//Report Error:
 					if(info.type == -1) {
 						throw new DriverInterfaceError(
@@ -1937,6 +1917,7 @@ exports.labjack = function ()
 								errFrame:i
 							}
 						);
+						return {retError:"Invalid Address", errFrame:i};
 					} else if (info.directionValid == 0) {
 						throw new DriverInterfaceError(
 							{
@@ -1944,26 +1925,29 @@ exports.labjack = function ()
 								errFrame:i
 							}
 						);
+						return {retError:"Invalid Write Attempt", errFrame:i};
 					} else {
 						throw new DriverInterfaceError(
 							{
-								retError:"Unexpected Error", 
+								retError:"Weird-Error", 
 								errFrame:i
 							}
 						);
+						return {retError:"Weird-Error", errFrame:i};
 					}
 				}
 
 				//Increment pointers
-				offsetD += 8;
+				offsetD +=8;
 				offsetI += 4;
 			}
 
 			//Increment & fill the values array separately because it may be of
 			//different length then the rest.
 			offsetD = 0;
-			for (i = 0; i < values.length; i++) {
-				if (typeof(value) == 'number') {
+			for(i = 0; i < values.length; i++)
+			{
+				if(typeof(value) == 'number') {
 					aValues.writeDoubleLE(values,offsetD);
 				} else {
 					aValues.writeDoubleLE(0,offsetD);
@@ -1986,8 +1970,9 @@ exports.labjack = function ()
 			throw new DriverInterfaceError(
 				"Address is not a number or string array"
 			);
+			return "Address is not a number or string array";
 		}
-		if (errorResult == 0) {
+		if(errorResult == 0) {
 			return this.populateRWManyArray(
 						numFrames, 
 						numValues, 
@@ -1996,8 +1981,48 @@ exports.labjack = function ()
 					);
 		} else {
 			throw new DriverOperationError(errorResult);
+			return errorResult;
 		}
 	}
+	/**
+	 * Read and write many addresses in a single driver call.
+	 *
+	 * @param {array} addresses Array of registers to write to. This function
+	 *		interprets a collection of numbers as a collection of addresses
+	 *		but interprets a string as a collection of register names.
+	 * @param {array} directions Array of read/write directions. Each element
+	 *		should be a number indicating the direction of the operation (read
+	 *		or write).
+	 * @param {array} values An array of values to send to the device. The array
+	 *		size should be the size of the addresses array. The input data type
+	 *		of each value is a double (number), and they will be converted into
+	 *		the data type passed in types.
+	 * @param {fuction} onError Function to call if an error is encountered
+	 *		during this operation.
+	 * @param {funcion} onSuccess Function to call after this operation
+	 *		completes.
+	 */
+	
+	/**
+	 * Synchronous version of rwMany.
+	 *
+	 * @param {array} addresses Array of registers to write to. This function
+	 *		interprets a collection of numbers as a collection of addresses
+	 *		but interprets a string as a collection of register names.
+	 * @param {array} directions Array of read/write directions. Each element
+	 *		should be a number indicating the direction of the operation (read
+	 *		or write).
+	 * @param {array} values An array of values to send to the device. The array
+	 *		size should be the size of the addresses array. The input data type
+	 *		of each value is a double (number), and they will be converted into
+	 *		the data type passed in types.
+	 * @throws {DriverOperationError} If there is an error produced by calling 
+	 * 		the LJM driver
+	 * @return {array} Array of number read from the device during this
+	 *		operation. While floating point values are interepreted, string
+	 *		values are not.
+	 */
+	
 
 	/**
 	 * Closes the device if it is currently open asynchronously.
@@ -2009,7 +2034,10 @@ exports.labjack = function ()
 	 */
 	this.close = function(onError, onSuccess) {
 		//Make sure that a device is open
-		if(this.checkStatus(onError)) { onSuccess(false); };
+		if(this.checkStatus(onError)) { 
+			//onSuccess(false);
+			return;
+		};
 
 		//Call the driver function
 		var self = this;
@@ -2066,14 +2094,15 @@ exports.labjack = function ()
 	 *		but the device was never opened, was assigned an invalid handle, or
 	 *		has an invalid deviceType.
 	**/
-	this.checkStatus = function(onError)
-	{
-		if((this.handle == null) && (this.deviceType == null))
+	this.checkStatus = function(onError) {
+		if((this.handle === null) && (this.deviceType === null))
 		{
 			if (onError === null) {
 				throw new DriverInterfaceError("Device Never Opened");
+				return true;
 			} else {
 				onError("Device Never Opened");
+				return true;
 			}
 		}
 	};
@@ -2084,8 +2113,7 @@ exports.labjack = function ()
 	 * @throws DriverInterfaceError: Thrown if the firmware constants have not
 	 *		been loaded yet.
 	**/
-	this.checkFirmwareConstants = function()
-	{
+	this.checkFirmwareConstants = function() {
 		if (this.firmwareVersions == null) {
 			throw new DriverInterfaceError("Firmware Versions File Not Loaded");
 		}
@@ -2097,8 +2125,7 @@ exports.labjack = function ()
 	 * @throws DriverInterfaceError: Thrown if the firmware binary has not been
 	 *		loaded, is not present, or is not accessible.
 	**/
-	this.checkLoadedFirmware = function()
-	{
+	this.checkLoadedFirmware = function() {
 		if (this.firmwareFileBuffer == null) {
 			throw new DriverInterfaceError("Firmware .bin File Not Loaded");
 		}
@@ -2110,8 +2137,7 @@ exports.labjack = function ()
 	 * @throws DriverInterfaceError: Thrown if the fimware binary could not
 	 *		be successfully parsed.
 	**/
-	this.checkLoadedFirmwareParsed = function()
-	{
+	this.checkLoadedFirmwareParsed = function() {
 		if (this.fwHeader == null) {
 			throw new DriverInterfaceError("Firmware .bin File Not Parsed");
 		}
