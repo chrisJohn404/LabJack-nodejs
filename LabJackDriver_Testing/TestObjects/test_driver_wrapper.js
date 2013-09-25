@@ -8,8 +8,8 @@
  * 		"./LabJackDriver/json_constants_parser"
  */
 
-var ljmJsonManager = require('../../LabJackDriver/json_constants_parser');
-var driver_const = require('../../LabJackDriver/driver_const');
+var ljmJsonManager = require('../../lib/json_constants_parser');
+var driver_const = require('../../lib/driver_const');
 
 var fakeDriverB
 {
@@ -231,7 +231,9 @@ var LJM_eReadAddresses = createCallableObject(
 	},
 	function(handle, length, addresses, types, results, errors, callback) {
 		lastFunctionCall.push("LJM_eReadAddressesAsync");
+		// console.log('Yodles\n',arguments);
 		argumentsList.push(arguments);
+		// console.log('ArgList\n',argumentsList);
 		var numReads = addresses.length;
 		if(addresses.length != types.length) {
 			console.log('ERROR!!!', numReads, types.length);
