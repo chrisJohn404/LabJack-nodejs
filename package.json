@@ -1,6 +1,6 @@
 {
 	"name": "labjack-nodejs",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"author": {
 		"name": "Chris Johnson",
 		"url": "http://labjack.com"
@@ -9,7 +9,7 @@
 		"name": "Sam Pottinger",
 		"url": "http://gleap.org"
 	},
-	"main": "./lib/device",
+	"main": "./lib/labjack_nodejs",
 	"license": "GNU GPL v3",
 	"keywords": [
         "LabJack",
