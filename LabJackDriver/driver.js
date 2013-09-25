@@ -165,8 +165,7 @@ exports.ljmDriver = function()
 				aIPAddresses, 
 				function (err, res){
 					if(err) throw err;
-					if(res == 0)
-					{
+					if(res == 0) {
 						var devArray = self.buildListAllArray(
 							numFound,
 							aDeviceTypes,
@@ -175,9 +174,7 @@ exports.ljmDriver = function()
 							aIPAddresses
 							);
 						onSuccess(devArray);
-					}
-					else
-					{
+					} else {
 						onError(res);
 					}
 				}
@@ -420,7 +417,7 @@ exports.ljmDriver = function()
 	 *		of the configuration setting as read from LJM.
 	 */
 	this.readLibrary = function(parameter, onError, onSuccess) {
-		if(typeof(parameter) == 'string') {
+		if (typeof(parameter) == 'string') {
 			var errorResult;
 			var returnVar = new ref.alloc('double',1);
 
@@ -461,8 +458,7 @@ exports.ljmDriver = function()
 				parameter, 
 				returnVar
 			);
-			if(errorResult != 0)
-			{
+			if (errorResult != 0) {
 				return errorResult
 			}
 			return returnVar.deref();
@@ -544,39 +540,37 @@ exports.ljmDriver = function()
 			return 'Invalid Input Parameter Types';
 		}
 		//Check for an error from driver & throw error
-		if(errorResult != 0)
-		{
+		if (errorResult != 0) {
 			throw new DriverOperationError(errorResult);
 			return errorResult;
-		}
-		else 
-		{
+		} else {
 			return 0;
 		}
 	}
 
 	/**
-	 * Calls the LJM_Log function asynchronously.
-	 * @param  {number} level     The log level to report the string at.
-	 * @param  {string} str       The string to be written to the log file.
-	 * @param  {function} onError   Function called on error.
-	 * @param  {function} onSuccess Function called on success.
+	 * Log an event through LJM's internal logging system.
+	 *
+	 * @param {number} level The severity of the event to report. Should
+	 *		correspond to a driver severity level constant.
+	 * @param {string} str Description of the event.
+	 * @param {function} onError Function to call if the log could not be
+	 *		updated successfully. Should take a single argument: either a string
+	 *		description of the error or number of the error code.
+	 * @param {function} onSuccess Function to call after the event has been
+	 *		logged successfully.
 	 */
 	this.logS = function(level, str, onError, onSuccess) {
-		if((typeof(level)!= 'number')||(typeof(str)!='string'))
-		{
+		if ((typeof(level)!= 'number')||(typeof(str)!='string')) {
 			onError('wrong types');
 			return 0;
 		}
 		var errorResult;
 		var strW = new Buffer(50);
 		strW.fill(0);
-		if(str.length < 50)
-		{
+		if(str.length < 50) {
 			ref.writeCString(str);
-		}
-		else
-		{
+		} else {
 			onError('string to long');
 			return 0;
 		}
@@ -596,41 +590,44 @@ exports.ljmDriver = function()
 	}
 
 	/**
-	 * Calls the LJM_Log function synchronously.
-	 * @param  {number} level     The log level to report the string at.
-	 * @param  {string} str       The string to be written to the log file.
-	 */
+	 * Synchronous version of logS.
+	 *
+	 * @param {number} level The severity of the event to report. Should
+	 *		correspond to a driver severity level constant.
+	 * @param {string} str Description of the event.
+	 * @throws {DriverInterfaceError} Thrown if an exception is encountered in
+	 *		the Node.js wrapper around the driver.
+	 * @throws {DriverOperationError} Thrown if an exception is encountered in
+	 *		the LJM driver itself.
+	**/
 	this.logSSync = function(level, str) {
-		if((typeof(level)!= 'number')||(typeof(str)!='string'))
-		{
+		if ((typeof(level)!= 'number')||(typeof(str)!='string')) {
 			throw new DriverInterfaceError('wrong types');
 			return 'wrong types';
 		}
 		var errorResult;
 		var strW = new Buffer(50);
 		strW.fill(0);
-		if(str.length < 50)
-		{
+		if (str.length < 50) {
 			ref.writeCString(str);
-		}
-		else
-		{
+		} else {
 			throw new DriverInterfaceError('string to long');
-			return 'string to long';
 		}
 
 		errorResult = this.ljm.LJM_Log(level, number);
-		if(errorResult != 0)
-		{
-			return errorResult;
+		if (errorResult != 0) {
+			throw new DriverOperationError(errorResult);
 		}
-		return 0;
 	}
 
 	/**
-	 * Asynchronously calls the LJM_ResetLog function.
-	 * @param  {function} onError   Function called on error.
-	 * @param  {function} onSuccess Function called on success.
+	 * Reset LJM's internall logging system.
+	 *
+	 * @param {function} onError Function to call if the log could not be
+	 *		updated successfully. Should take a single argument: either a string
+	 *		description of the error or number of the error code.
+	 * @param {function} onSuccess Function called on success. Should not take
+	 *		any arguments.
 	 */
 	this.resetLog = function(onError, onSuccess) {
 		var errorResult;
@@ -644,17 +641,20 @@ exports.ljmDriver = function()
 				}
 			}
 		);
-		return 0;
 	}
 
 	/**
-	 * Synchronously calls the LJM_ResetLog function.
+	 * Synchronously calls resetLog.
+	 *
+	 * @throws {DriverInterfaceError} Thrown if an exception is encountered in
+	 *		the Node.js wrapper around the driver.
+	 * @throws {DriverOperationError} Thrown if an exception is encountered in
+	 *		the LJM driver itself.
 	 */
 	this.resetLogSync = function() {
 		var errorResult;
 		errorResult = this.ljm.LJM_ResetLog();
-		if(errorResult != 0)
-		{
+		if (errorResult != 0) {
 			return errorResult;
 		}
 		return 0;
