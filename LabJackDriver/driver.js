@@ -2,7 +2,6 @@
  * Wrapper around LabJack LJM driver.
  *
  * @author Chris Johnson (chrisjohn404, LabJack Corp.)
- * @author Sam Pottinger (samnsparky, LabJack Corp. - lesser contributor)
 **/
 
 var driver_const = require('./driver_const');

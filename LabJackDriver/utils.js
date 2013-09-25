@@ -1,3 +1,9 @@
+/**
+ * Collection of generic / general convience functions.
+ *
+ * @author Chris Johnson (chrisjohn404, LabJack Corp.)
+**/
+
 exports.sscanf = function (str, format) {
   // +   original by: Brett Zamir (http://brett-zamir.me)
   // %        note 1: Since JS does not support scalar reference variables, any additional arguments to the function will

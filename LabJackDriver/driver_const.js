@@ -1,4 +1,11 @@
-
+/**
+ * Collection of LJM native constants necessary.
+ *
+ * Set of constants defined by LJM that are necessary for interfacing with the
+ * native software layer.
+ *
+ * @author Chris Johnson (chrisjohn404, LabJack Corp.)
+**/
 
 exports.LJM_JS_VERSION = 0.0245;
 exports.LJM_DRVR_VERSION = '0.2.45';
@@ -133,9 +140,9 @@ exports.typeSizes = {
 	UINT32: 4,
 	FLOAT32: 4
 };
-exports.LJM_UINT16 = 0; 									// C type of unsigned short
-exports.LJM_UINT32 = 1; 									// C type of unsigned int
-exports.LJM_INT32 = 2; 										// C type of int
-exports.LJM_FLOAT32 = 3; 									// C type of float
-exports.LJM_STRING = 98;                                    // C type of c-String
-exports.LJM_BYTE = 99;                                      // C type of unsigned char
+exports.LJM_UINT16 = 0; 			                 // C type of unsigned short
+exports.LJM_UINT32 = 1; 			                 // C type of unsigned int
+exports.LJM_INT32 = 2; 				                 // C type of int
+exports.LJM_FLOAT32 = 3; 			                 // C type of float
+exports.LJM_STRING = 98;                             // C type of c-String
+exports.LJM_BYTE = 99;                               // C type of unsigned char

@@ -1,14 +1,12 @@
 /**
- * The purpose of parsing and re-indexing the LJM json file is to increase the 
- * speed at which address information can be found.  This file provides access 
- * to dictionarys that have re-indexed the constants file by address (number) 
- * and name (string).
+ * Logic for interfacing with the driver / register constants and config.
+ *
+ * Logic for parsing and re-indexing the LJM json file to increase access speed
+ * to register, static driver, and configuration information. This module 
+ * provides access to objects that have re-indexed the constants file by address
+ * (number) and name (string).
  *
  * @author Chris Johnson (ChrisJohn404)
- *
- * Module Dependencies:
- * fs to load the json file.
- * os to figure out where the json file lives on the currently running computer
  */
 
 var fs = require('fs');				//Load File System module

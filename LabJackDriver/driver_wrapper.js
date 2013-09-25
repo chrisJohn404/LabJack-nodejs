@@ -1,8 +1,9 @@
 /**
- * Module dependencies.
- * Github: https://github.com/rbranson/node-ffi
- * Tutorial: https://github.com/rbranson/node-ffi/wiki/Node-FFI-Tutorial
+ * Low level LJM dynamic library interface as provided by ffi.
+ *
+ * @author Chris Johnson (chrisjohn404, LabJack Corp.)
  */
+
 var ffi = require('ffi');		//load _______ module 
 var ref = require('ref');		//Load variable type module
 var fs = require('fs');			//Load File System module
