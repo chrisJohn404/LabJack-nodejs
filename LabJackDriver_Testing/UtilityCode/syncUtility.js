@@ -80,7 +80,7 @@ var runTest = function() {
 			}
 			else {
 				//console.log(e);
-				onError("Weird-Error"+e.toString());
+				onError("Unexpected Error"+e.toString());
 			}
 		}	
 	}

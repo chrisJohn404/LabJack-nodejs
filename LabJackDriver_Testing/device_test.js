@@ -17,12 +17,12 @@ var q = require('q');
 var ref = require('ref');
 var fakeDriver = require('./TestObjects/test_driver_wrapper');
 
-var driver_wrapper = rewire('../LabJackDriver/driver_wrapper');
+var driver_wrapper = rewire('../lib/driver_wrapper');
 
-var deviceManager = rewire('../LabJackDriver/device');
+var deviceManager = rewire('../lib/device');
 deviceManager.__set__('driverLib',fakeDriver);
 
-var driver_const = require('../LabJackDriver/driver_const');
+var driver_const = require('../lib/driver_const');
 
 var asyncRun = require('./UtilityCode/asyncUtility');
 var syncRun = require('./UtilityCode/syncUtility');
@@ -327,13 +327,13 @@ module.exports = {
 		];
 		var expectedFunctionList = [ 
 			'LJM_eReadAddress',
-			'LJM_eReadName',
+			'LJM_eReadAddress',
 			'LJM_eReadAddressString',
-			'LJM_eReadNameString',
+			'LJM_eReadAddressString',
 			'LJM_eReadAddressAsync',
-			'LJM_eReadNameAsync',
+			'LJM_eReadAddressAsync',
 			'LJM_eReadAddressStringAsync',
-			'LJM_eReadNameStringAsync' 
+			'LJM_eReadAddressStringAsync' 
 		];
 		var expectedResultList = [
 			testVal,
@@ -354,7 +354,6 @@ module.exports = {
 				var funcs = fakeDriver.getLastFunctionCall();
 				var results = asyncRun.getResults();
 				var args = fakeDriver.getArgumentsList();
-				//console.log(args)
 				var i;
 				for(i = 0; i < testList.length*2; i++) {
 					test.equal(funcs[i], expectedFunctionList[i]);
@@ -365,6 +364,7 @@ module.exports = {
 
 				//Test to make sure the address-to-type conversion worked(async)
 				test.equal(args[5][2],driver_const.LJM_FLOAT32);
+
 
 				test.done();
 			});		
@@ -427,6 +427,7 @@ module.exports = {
 				//console.log(args)
 				var i;
 
+
 				// console.log("Functions Called",funcs);
 				// console.log("Results",results);
 				//Test to make sure that the proper number of commands have been
@@ -463,7 +464,7 @@ module.exports = {
 			'LJM_eReadAddresses',
 			'LJM_eReadNames',
 			'LJM_eReadAddressesAsync',
-			'LJM_eReadNamesAsync',
+			'LJM_eReadAddressesAsync',
 		];
 		//Expected info combines both sync & async
 		var expectedResultList = [
@@ -472,7 +473,7 @@ module.exports = {
 			resArray,
 			resArray,
 		];
-		syncRun.run(testList);
+		syncRun.run(testList,false,false);
 		asyncRun.run(testList,
 			function(res) {
 				//Error
@@ -508,6 +509,9 @@ module.exports = {
 
 				//Test to make sure that each function got passed the proper 
 				//arguments
+				// console.log(funcs)
+				// console.log('argList length:',argList.length);
+				// console.log('argList:',argList);
 				for(i = 0; i < numDriverCalls; i++) {
 					if(expectedFunctionList[i] == 'LJM_eReadAddressesAsync') {
 						test.equal(argList[i+offsetSync][1], numArgs);
@@ -529,6 +533,7 @@ module.exports = {
 						test.equal(argList[i+offsetSync][1], numArgs);
 						test.equal(argList[i+offsetSync][3].length, numArgs*8);
 						test.equal(argList[i+offsetSync][4].length, 4);
+					} else {
 					}
 				}
 				test.done();
@@ -567,23 +572,23 @@ module.exports = {
 			'LJM_eReadNames',
 			'LJM_eReadAddresses',
 			'LJM_eReadNames',
-			'LJM_eReadNamesAsync',
-			'LJM_eReadNamesAsync',
 			'LJM_eReadAddressesAsync',
-			'LJM_eReadNamesAsync',
+			'LJM_eReadAddressesAsync',
 		];
 		//Expected info combines both sync & async
 		var expectedResultList = [
+		// Errors for Sync:
 			{ retError: 'Invalid Address', errFrame: 0 },
 			{ retError: erCode, errFrame: 99 },
 			{ retError: 'Invalid Read Attempt', errFrame: 1 },
 			{ retError: erCode, errFrame: 99 },
 			{ retError: erCode, errFrame: 99 },
 			{ retError: erCode, errFrame: 99 },
+		// Errors for Async
 			{ retError: 'Invalid Address', errFrame: 0 },
-			{ retError: erCode, errFrame: 99 },
+			{ retError: 'Invalid Address', errFrame: 0 },
 			{ retError: 'Invalid Read Attempt', errFrame: 1 },
-			{ retError: erCode, errFrame: 99 },
+			{ retError: 'Invalid Read Attempt', errFrame: 1 },
 			{ retError: erCode, errFrame: 99 },
 			{ retError: erCode, errFrame: 99 },
 		];
@@ -613,6 +618,7 @@ module.exports = {
 
 				//Test to make sure that the expected driver calls is actually
 				//what happened:
+				
 				test.deepEqual(expectedFunctionList,funcs);
 
 				//Make sure that the errors are being returned properly & stored
@@ -1000,14 +1006,14 @@ module.exports = {
 		//Create test-variables
 		//rwMany(numFrames,addresses,directions,numValues,values
 		var testList = [
-			'rwMany(2,[0,2],[0,0],[1,1],[null,null])',
-			'rwMany(2,["AIN0","AIN2"],[0,0],[1,1],[null,null])',
-			'rwMany(3,[0,2,1000],[0,0,1],[1,1,1],[null,null,2.5])',
-			'rwMany(2,[0,1000],[0,1],[2,1],[null,null,2.5])',
-			'rwMany(2,[0,1000],[0,1],[1,1],[null,2.5])',
-			'rwMany(2,[1000,0],[1,0],[1,1],[2.5,null])',
-			'rwMany(2,[1000,0],[1,0],[2,1],[2.5,2.5,null])',
-			'rwMany(2,["DAC0","AIN0"],[1,0],[2,2],[2.5,2.5,null,null])',
+			'rwMany([0,2],[0,0],[1,1],[null,null])',
+			'rwMany(["AIN0","AIN2"],[0,0],[1,1],[null,null])',
+			'rwMany([0,2,1000],[0,0,1],[1,1,1],[null,null,2.5])',
+			'rwMany([0,1000],[0,1],[2,1],[null,null,2.5])',
+			'rwMany([0,1000],[0,1],[1,1],[null,2.5])',
+			'rwMany([1000,0],[1,0],[1,1],[2.5,null])',
+			'rwMany([1000,0],[1,0],[2,1],[2.5,2.5,null])',
+			'rwMany(["DAC0","AIN0"],[1,0],[2,2],[2.5,2.5,null,null])',
 		];
 
 		//Expected info combines both sync & async
