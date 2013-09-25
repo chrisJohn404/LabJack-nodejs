@@ -2,6 +2,7 @@
  * Wraps an LJM handle with all LabJack device functionality.
  *
  * @author Chris Johnson (chrisjohn404, LabJack Corp.)
+ * @author Sam Pottinger (samnsparky, LabJack Corp. - lesser contributor)
 **/
 
 //NOT SURE IF THIS IS NEEDED

@@ -1,5 +1,9 @@
-
-
+/**
+ * Wrapper around LabJack LJM driver.
+ *
+ * @author Chris Johnson (chrisjohn404, LabJack Corp.)
+ * @author Sam Pottinger (samnsparky, LabJack Corp. - lesser contributor)
+**/
 
 var driver_const = require('./driver_const');
 var ref = require('ref');//http://tootallnate.github.io/ref/#types-double
@@ -7,11 +11,13 @@ var util = require('util');//
 var driverLib = require('./driver_wrapper');
 var ffi = require('ffi');//
 
+
 // For problems encountered while in driver DLL
 function DriverOperationError(code)
 {
 	this.code = code;
 };
+
 
 // For problem with using this layer
 function DriverInterfaceError(description)
@@ -19,9 +25,9 @@ function DriverInterfaceError(description)
 	this.description = description;
 };
 
+
 /**
- * Constructor to initialize the ljmDriver object
- * @return {[type]} [description]
+ * Constructor for an object acting as LJM driver wrapper.
  */
 exports.ljmDriver = function()
 {
@@ -29,19 +35,27 @@ exports.ljmDriver = function()
 	this.constants = driverLib.getConstants();
 
 	/**
-	 * Helper function for the listAll and listAllSync functions to build
-	 * the proper return array. 
-	 * @param  {number} numFound Appropriate Information from LJM call.
-	 * @param  {Buffer} aDevT    Appropriate Information from LJM call.
-	 * @param  {Buffer} aConT    Appropriate Information from LJM call.
-	 * @param  {Buffer} aSN      Appropriate Information from LJM call.
-	 * @param  {Buffer} aIP      Appropriate Information from LJM call.
-	 * @return {Dict-Array}          Array to be returned to caller.
+	 * Dereferences buffers and zips arrays in building listAll return values.
+	 *
+	 * Helper function for the listAll and listAllSync functions to zip arrays
+	 * and dereference native interface buffers containing information about the
+	 * devices that are available for opening.
+	 *
+	 * @param {number} numFound 
+	 * @param {Buffer} aDevT Buffer containing a collection of device types as
+	 *		provided by LJM.
+	 * @param {Buffer} aConT Buffer containing information about how each device
+	 *		
+	 * @param {Buffer} aSN      Appropriate Information from LJM call.
+	 * @param {Buffer} aIP      Appropriate Information from LJM call.
+	 * @return {array} Array of objects, each with information about an
+	 *		available device.
 	 */
 	this.buildListAllArray = function(numFound, aDevT, aConT, aSN, aIP) {
 		var deviceInfoArray = new Array();
 		var offset = 0;
-		for(var i = 0; i < numFound.deref(); i++) {
+		var numDevices = numFound.deref();
+		for(var i = 0; i < numDevices; i++) {
 			var ipStr = "";
 			ipStr += aIP.readUInt8(offset+3).toString();
 			ipStr += ".";
@@ -67,13 +81,24 @@ exports.ljmDriver = function()
 	}
 
 	/**
+	 * Retrieves a list of all LabJack devices avaialable for opening.
+	 *
 	 * Function calls either the LJM_ListALL or LJM_ListAllS functions 
 	 * asynchronously.
 	 * 
-	 * @param  {number/string} deviceType     deviceType constant
-	 * @param  {number/string} connectionType connectionType constant
-	 * @param  {function} onError        called on error
-	 * @param  {function} onSuccess      called on success
+	 * @param {string} deviceType String describing what type of device to
+	 *		open. Examples include 'LJM_dtT7'. May also be an integer constant
+	 *		corresponding to the device type.
+	 * @param {string} connectionType connectionType String describing what
+	 *		type of connection to open. Examples include 'LJM_ctUSB' and
+	 *		'LJM_ctANY'. May also be an integer constant corresponding to the
+	 *		appropriate connection medium to use.
+	 * @param {function} onError Function to call if an error is encoutnered
+	 *		while enumerating available devices. Must take a single parameter
+	 *		(either an integer or string) describing the error encountered.
+	 * @param {function} onSuccess Function to call with the resulting
+	 *		enumeration. Should take a single argument: the listing of
+	 8		avilable devices as an array of object.
 	 */
 	this.listAll = function(deviceType, connectionType, onError, onSuccess) {
 		var errorResult;
@@ -164,16 +189,21 @@ exports.ljmDriver = function()
 	}
 
 	/**
-	 * Function calls either the LJM_ListALL or LJM_ListAllS functions 
-	 * synchronously.
+	 * Synchronous version of listAll.
 	 * 
-	 * @param  {number/string} deviceType     deviceType constant.
-	 * @param  {number/string} connectionType connectionType constant.
-	 * @return {Dict-array}                Dict-Array of devices found.
-	 * @throws {DriverInterfaceError} If There is a problem in this layer.
-	 * @throws {DriverOperationError} If A problem occurs when calling the LJM 
-	 *         driver.
-	 */
+	 * @param {string} deviceType String describing what type of device to
+	 *		open. Examples include 'LJM_dtT7'. May also be an integer constant
+	 *		corresponding to the device type.
+	 * @param {string} connectionType connectionType String describing what
+	 *		type of connection to open. Examples include 'LJM_ctUSB' and
+	 *		'LJM_ctANY'. May also be an integer constant corresponding to the
+	 *		appropriate connection medium to use.
+	 * @return {array} the listing of avilable devices as an array of object.
+	 * @throws {DriverInterfaceError} Thrown if an exception is encountered in
+	 *		the Node.js wrapper around the driver.
+	 * @throws {DriverOperationError} Thrown if an exception is encountered in
+	 *		the LJM driver itself.
+	**/
 	this.listAllSync = function(deviceType, connectionType) {
 		var errorResult;
 		var devT;
@@ -241,9 +271,12 @@ exports.ljmDriver = function()
 
 	/**
 	 * Converts an error number to a string asynchronously.
-	 * @param  {number} errNum    number to be converted to a string.
-	 * @param  {function} onError   function called on error.
-	 * @param  {function} onSuccess function called on success.
+	 * @param {number} errNum Error number to be converted to a string.
+	 * @param {function} onError Function to call if an error is encountered
+	 *		while converting the provided error number to a string description.
+	 * @param {function} onSuccess Function to call with the string description
+	 *		of the error number passed. Should take a single argument: the
+	 *		resulting string description.
 	 */
 	this.errToStr = function(errNum, onError, onSuccess) {
 		var errorResult=0;
@@ -267,8 +300,14 @@ exports.ljmDriver = function()
 	}
 
 	/**
-	 * Converts an error number to a string synchronously.
-	 * @param  {number} errNum    number to be converted to a string.
+	 * Synchrnonous version of errToStr.
+	 * @param {number} errNum Error number to be converted to a string.
+	 * @return {string} The string error description corresponding to the
+	 *		provided error numebr.
+	 * @throws {DriverInterfaceError} Thrown if an exception is encountered in
+	 *		the Node.js wrapper around the driver.
+	 * @throws {DriverOperationError} Thrown if an exception is encountered in
+	 *		the LJM driver itself.
 	 */
 	this.errToStrSync = function(errNum) {
 		var errorResult=0;
@@ -285,9 +324,13 @@ exports.ljmDriver = function()
 	}
 	
 	/**
-	 * Calls the LJM_LoadConstants function asynchronously.
-	 * @param  {function} onError   Function called on error.
-	 * @param  {function} onSuccess Function called on success.
+	 * Loads driver constants into memory.
+	 *
+	 * @param {function} onError Function to call if an error is encoutnered in
+	 *		loading driver constants. Should take a single arugment: an integer
+	 *		or string description of the error encoutnered.
+	 * @param {function} onSuccess Function to call after constants have been
+	 *		loaded. Should take no arguments.
 	 */
 	this.loadConstants = function(onError, onSuccess) {
 		var errorResult;
@@ -306,21 +349,29 @@ exports.ljmDriver = function()
 
 	/**
 	 * Calls the LJM_LoadConstants function synchronously.
+	 *
+	 * @throws {DriverOperationError} Error thrown if the driver could not load
+	 *		constants, likely because of file system issues.
 	 */
 	this.loadConstantsSync = function() {
 		var errorResult;
 		errorResult = this.ljm.LJM_LoadConstants();
 		if (errorResult != 0) {
-			return errorResult;
+			throw new DriverOperationError(errorResult);
 		} else {
 			return 0;
 		}
 	}
 
 	/**
-	 * Calls the LJM_CloseAll function asynchronously.
-	 * @param  {function} onError   Function called on error
-	 * @param  {function} onSuccess Function called on success
+	 * Close all open LabJack devices.
+	 *
+	 * @param {function} onError Function to call if an error is encountered
+	 *		while closing devices. Should take a single arugment: a description
+	 *		of the error encountered as a string description or integer error
+	 *		number.
+	 * @param {function} onSuccess Function to call after all devices have
+	 *		been closed. Should take no arguments.
 	 */
 	this.closeAll = function(onError, onSuccess) {
 		var errorResult;
@@ -338,7 +389,12 @@ exports.ljmDriver = function()
 	}
 
 	/**
-	 * Calls the LJM_CloseAll function synchronously.
+	 * Synchronous version of closeAll.
+	 *
+	 * @throws {DriverInterfaceError} Thrown if an exception is encountered in
+	 *		the Node.js wrapper around the driver.
+	 * @throws {DriverOperationError} Thrown if an exception is encountered in
+	 *		the LJM driver itself.
 	 */
 	this.closeAllSync = function() {
 		var errorResult;
@@ -352,10 +408,16 @@ exports.ljmDriver = function()
 	}
 
 	/**
-	 * Calls the LJM_ReadLIbraryConfigS function asynchronously.
-	 * @param  {string} parameter LJM driver constant to read.
-	 * @param  {function} onError   Function called on error.
-	 * @param  {function} onSuccess Function called on success.
+	 * Read an operational configuration setting for LJM.
+	 *
+	 * @param {string} parameter The name of the configuration setting to reads.
+	 * @param {function} onError Function to call if an error is encountered
+	 * 		while reading this configuration setting. This function should
+	 *		take a single argument: a string error description or number
+	 *		error code.
+	 * @param {function} onSuccess Function to call after the configuration
+	 *		setting has been applied. Should take a single argument: the value
+	 *		of the configuration setting as read from LJM.
 	 */
 	this.readLibrary = function(parameter, onError, onSuccess) {
 		if(typeof(parameter) == 'string') {
@@ -381,9 +443,14 @@ exports.ljmDriver = function()
 	}
 	
 	/**
-	 * Calls the LJM_ReadLIbraryConfigS function synchronously.
-	 * @param  {string} parameter LJM driver constant to read.
-	 * @return {number}           Value to be returned.
+	 * Synchronous version of readLibrary.
+	 *
+	 * @param  {string} parameter The name of the configuration setting to read.
+	 * @return {number} The value of the provided configuration setting.
+	 * @throws {DriverInterfaceError} Thrown if an exception is encountered in
+	 *		the Node.js wrapper around the driver.
+	 * @throws {DriverOperationError} Thrown if an exception is encountered in
+	 *		the LJM driver itself.
 	 */
 	this.readLibrarySync = function(parameter) {
 		if(typeof(parameter) == 'string') {
