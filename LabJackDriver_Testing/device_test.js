@@ -17,12 +17,12 @@ var q = require('q');
 var ref = require('ref');
 var fakeDriver = require('./TestObjects/test_driver_wrapper');
 
-var driver_wrapper = rewire('../LabJackDriver/driver_wrapper');
+var driver_wrapper = rewire('../lib/driver_wrapper');
 
-var deviceManager = rewire('../LabJackDriver/device');
+var deviceManager = rewire('../lib/device');
 deviceManager.__set__('driverLib',fakeDriver);
 
-var driver_const = require('../LabJackDriver/driver_const');
+var driver_const = require('../lib/driver_const');
 
 var asyncRun = require('./UtilityCode/asyncUtility');
 var syncRun = require('./UtilityCode/syncUtility');

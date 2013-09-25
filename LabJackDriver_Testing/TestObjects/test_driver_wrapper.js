@@ -8,8 +8,8 @@
  * 		"./LabJackDriver/json_constants_parser"
  */
 
-var ljmJsonManager = require('../../LabJackDriver/json_constants_parser');
-var driver_const = require('../../LabJackDriver/driver_const');
+var ljmJsonManager = require('../../lib/json_constants_parser');
+var driver_const = require('../../lib/driver_const');
 
 var fakeDriverB
 {
