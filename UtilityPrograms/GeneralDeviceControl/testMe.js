@@ -2,14 +2,12 @@
 //Run: ./testMe.js --testNum=0 --async=true
 //Requires "node-optimist" to accept commandline args: https://github.com/substack/node-optimist
 //Stuff For Testing:
-var argv = require('optimist').argv;
 
-var assert = require('assert');
-assert.equal('Hello','Hello');
+var argv = require('optimist').argv;
 
 basicTest = 
 [
-'open("LJM_dtT7","LJM_ctUSB","LJM_idANY")',
+'open("LJM_dtANY","LJM_ctANY","LJM_idANY")',
 'getHandleInfo()',
 'read("FIO0")',
 'write(1000, 0.5)',
@@ -18,7 +16,7 @@ basicTest =
 'read(2)',
 'write("DAC0", 5.0)',
 'write("DAC1", 5.0)',
-'readS("WIFI_SSID_DEFAULT")',
+'read("WIFI_SSID_DEFAULT")',
 'readMany(["AIN0","AIN1","AIN2"])',
 'writeMany(["DAC0","DAC1"], [1.0, 2.0])',
 'readMany(["AIN0","AIN1","AIN2"])',
@@ -56,6 +54,7 @@ openCloseTest =
 'getHandleInfo()',
 'read("FIRMWARE_VERSION")',
 'read("BOOTLOADER_VERSION")',
+'read("HARDWARE_INSTALLED")',
 //'close()',
 //'open("LJM_dtT7","LJM_ctANY","LJM_idANY")',
 //'close()',
@@ -70,8 +69,8 @@ configureWifiLJ =
 [
 'open("LJM_dtT7","LJM_ctUSB","LJM_idANY")',
 'write("POWER_WIFI",0)',
-'writeS("WIFI_SSID_DEFAULT", "5poundbass")',
-'writeS("WIFI_PASSWORD_DEFAULT", "smgmtbmb3cmtbc")',
+'write("WIFI_SSID_DEFAULT", "5PoundBass")',
+'write("WIFI_PASSWORD_DEFAULT", "smgmtbmb3cmtbc")',
 'write("WIFI_APPLY_SETTINGS",1)',
 'write("POWER_WIFI",1)',
 'close()'
@@ -80,8 +79,8 @@ configureWifiHome =
 [
 'open("LJM_dtT7","LJM_ctUSB","LJM_idANY")',
 'write("POWER_WIFI",0)',
-'writeS("WIFI_SSID_DEFAULT", "AAA")',
-'writeS("WIFI_PASSWORD_DEFAULT", "timmarychriskevin")',
+'write("WIFI_SSID_DEFAULT", "AAA")',
+'write("WIFI_PASSWORD_DEFAULT", "timmarychriskevin")',
 'write("WIFI_APPLY_SETTINGS",1)',
 'write("POWER_WIFI",1)',
 'close()'
@@ -90,8 +89,9 @@ readWifiConfig =
 [
 'open("LJM_dtT7","LJM_ctUSB","LJM_idANY")',
 'read("POWER_WIFI")',
-'readS("WIFI_SSID_DEFAULT")',
+'read("WIFI_SSID_DEFAULT")',
 'read("WIFI_STATUS")',
+'read("WIFI_IP")',
 'close()'
 ]
 
@@ -159,7 +159,21 @@ LUATestScript =
 [
 
 ]
-
+listAllTest = 
+[
+'listAll("LJM_dtT7","LJM_ctWiFi")',
+]
+configureWifiTJ = 
+[
+'open("LJM_dtT7","LJM_ctUSB","LJM_idANY")',
+'write("POWER_WIFI",0)',
+'write("WIFI_SSID_DEFAULT", "linksys-johnson-hifi")',
+'write("WIFI_PASSWORD_DEFAULT", "timmarychriskevin")',
+'write("WIFI_DHCP_ENABLE_DEFAULT",0)',
+'write("WIFI_APPLY_SETTINGS",1)',
+'write("POWER_WIFI",1)',
+'close()'
+]
 /*var testArray = new Array();
 testArray[0] = basicTest;
 testArray[1] = writeTest;
@@ -180,12 +194,13 @@ readWifiConfig,			// 5
 updateFirmware,			// 6
 downloadFirmware,		// 7
 LUATestScript,			// 8
+listAllTest,			// 9
+configureWifiTJ,		// 10
 ]
 
 var activeTest;
 if(argv.testNum != null)
 {
-	console.log('here',argv.testNum)
 	if((parseInt(argv.testNum)>=0) && (parseInt(argv.testNum)<testArray.length))
 	{
 		activeTest = testArray[parseInt(argv.testNum)];
@@ -214,6 +229,7 @@ if(argv.async=='true')
 	var asyncTest = require('./asyncTest');
 
 	//Test Async-Functionality
+	console.log('Starting Async-Test');
 	console.log(activeTest);
 	asyncTest.run(activeTest);
 }
@@ -222,10 +238,13 @@ else
 	console.log('Testing Blocking Functionality');
 
 	//Load Blocking-Testing file
-	var blockingTest = require('./blockingTest');
+	//var blockingTest = require('./blockingTest');
 
 	//Test Blocking-Functionality
-	blockingTest.run(activeTest);	
+	console.log('Starting Blocking-Test');
+	console.log(activeTest);
+	console.log('Not Run, currently not working');
+	//blockingTest.run(activeTest);	
 }
 
 

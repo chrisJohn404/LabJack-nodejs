@@ -31,7 +31,6 @@
 		"optimist": "~0",
 		"ref": "~0",
 		"rewire": "~1",
-		"ljmmm-parse": "~0.1",
-		"q": "~0"
+		"ljmmm-parse": "~0.1"
 	}
 }
