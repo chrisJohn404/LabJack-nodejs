@@ -157,7 +157,7 @@ downloadFirmware =
 ]
 LUATestScript = 
 [
-
+'listAll("LJM_dtT7","LJM_ctEthernet")',
 ]
 listAllTest = 
 [
@@ -182,6 +182,41 @@ testArray[3] = configureWifiLJ;
 testArray[4] = configureWifiHome;
 testArray[5] = readWifiConfig;
 testArray[6] = updateFirmware;*/
+readRSSI_1 = 
+[
+'open("LJM_dtT7","LJM_ctWiFi","192.168.1.90")',
+'read("WIFI_RSSI")',
+'close()'
+]
+readRSSI_2 = 
+[
+'open("LJM_dtT7","LJM_ctWiFi","192.168.1.186")',
+'read("WIFI_RSSI")',
+'close()'
+]
+rwManyTest = 
+[
+'open("LJM_dtT7","LJM_ctEthernet","470010533")',
+'read("AIN0")',
+'rwMany(["AIN0","AIN0"],[0,0],[2,1],[-1,-1,-1])',
+'close()'
+]
+altNamesAndBeta = 
+[
+'open("LJM_dtT7","LJM_ctEthernet","470010117")',
+'read("DIO0")',
+'read("LUA_RUN")',
+'close()'
+]
+speedTest = 
+[
+'open("LJM_dtT7","LJM_ctEthernet","470010117")',
+]
+var i;
+for(i = 0; i < 500; i++) {
+	speedTest.push('read("AIN0")');
+}
+speedTest.push('close()');
 
 testArray = 
 [
@@ -196,6 +231,11 @@ downloadFirmware,		// 7
 LUATestScript,			// 8
 listAllTest,			// 9
 configureWifiTJ,		// 10
+readRSSI_1,				// 11
+readRSSI_2, 			// 12
+rwManyTest,				// 13
+altNamesAndBeta,		// 14
+speedTest				// 15
 ]
 
 var activeTest;
@@ -231,6 +271,7 @@ if(argv.async=='true')
 	//Test Async-Functionality
 	console.log('Starting Async-Test');
 	console.log(activeTest);
+	asyncTest.printData(false);
 	asyncTest.run(activeTest);
 }
 else
@@ -238,13 +279,14 @@ else
 	console.log('Testing Blocking Functionality');
 
 	//Load Blocking-Testing file
-	//var blockingTest = require('./blockingTest');
+	var blockingTest = require('./blockingTest');
 
 	//Test Blocking-Functionality
 	console.log('Starting Blocking-Test');
 	console.log(activeTest);
-	console.log('Not Run, currently not working');
-	//blockingTest.run(activeTest);	
+	// console.log('Not Run, currently not working');
+	blockingTest.printData(false);
+	blockingTest.run(activeTest);	
 }
 
 
