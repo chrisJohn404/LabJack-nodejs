@@ -20,7 +20,8 @@ Requirements
 
 * LabJack's [LJM Library](https://labjack.com/support/software/installers/ljm).
 * Ability to build native modules, for windows this requires visual studio.
-* Look at the [node-ffi](https://www.npmjs.com/package/node-ffi) library for more requirements.
+* Look at the [ffi](https://www.npmjs.com/package/ffi) library for more requirements.
+* Look at the [node-gyp installation notes](https://github.com/nodejs/node-gyp#installation) for various requirements.
 * Also look at the [ref](https://www.npmjs.com/package/ref) library as it too is a native module.
 
 Installation
