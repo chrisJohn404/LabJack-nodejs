@@ -568,12 +568,12 @@ var LJM_ListAllExtended = createCallableObject(
 	});
 
 var LJM_OpenAll = createCallableObject(
-	function(DeviceType, ConnectionType, NumOpened, aHandles, NumErrors, aErrors) {
+	function(DeviceType, ConnectionType, NumOpened, aHandles, NumErrors, ErrorHandle, Errors) {
 		lastFunctionCall.push("LJM_OpenAll");
 		argumentsList.push(arguments);
 		return expectedResult;
 	},
-	function(DeviceType, ConnectionType, NumOpened, aHandles, NumErrors, aErrors, callback) {
+	function(DeviceType, ConnectionType, NumOpened, aHandles, NumErrors, ErrorHandle, Errors, callback) {
 		lastFunctionCall.push("LJM_OpenAllAsync");
 		argumentsList.push(arguments);
 		reportEnd(callback);
