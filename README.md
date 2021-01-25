@@ -57,7 +57,14 @@ Also, consider using the command "npm config set msvs_version 2015 --global" ins
 This driver wrapper was created supporting both synchronous and asynchronous function calls to support both functional and object-oriented programing styles. The general format is shown below:
 ```javascript
 //Synchronous syntax:
-var result = exampleFunctionSync(arg1);
+try{
+	const result = exampleFunctionSync(arg1);
+}catch(err){
+	//see detailed information about the error and where it came from in the code stack
+	console.trace(err);
+	//you can handle the err here.
+	//if you want the error to exit the node program, simply do not use the try catch
+}
 
 //Asynchronous syntax (requiring function callbacks):
 exampleFunction(
@@ -85,10 +92,24 @@ var createDeviceObject = ljn.getDevice();
 var device = new createDeviceObject();
 
 // Open a device
-device.openSync();
+try{
+	device.openSync();
+}catch(err){
+	//see detailed information about the error and where it came from in the code stack
+	console.trace(err);
+	//you can handle the err here.
+	//if you want the error to exit the node program, simply do not use the try catch
+}
 
 // Read an analog input
-console.log('AIN0:', device.readSync('AIN0'));
+try{
+	console.log('AIN0:', device.readSync('AIN0'));
+}catch(err){
+	//see detailed information about the error and where it came from in the code stack
+	console.trace(err);
+	//you can handle the err here.
+	//if you want the error to exit the node program, simply do not use the try catch
+}
 
 // Close the device
 device.closeSync();
@@ -147,14 +168,23 @@ Special/Streaming
 #### open():
 Uses LJM_Open and LJM_OpenS
 ```javascript
-device.openSync(); //opens the first found LabJack device, LJM_OpenS('LJM_dtANY', 'LJM_ctANY', 'LJM_idANY')
-device.openSync('LJM_dtANY', 'LJM_ctANY', 'LJM_idANY'); //Connect to first-found device
-device.openSync('LJM_dtT7', 'LJM_USB', '470010642'); //Connect to T7 w/ serial number 470010642 connected via USB
-device.openSync('LJM_dtT7', 'LJM_ETHERNET', '470010642'); //Connect to T7 w/ serial number 470010642 connected via ETHERNET
-device.openSync('LJM_dtT7', 'LJM_WIFI', '470010642'); //Connect to T7 w/ serial number 470010642 connected via WIFI
-device.openSync(7, 1, 470010642); //Connect to T7 w/ serial number 470010642 connected via USB
 
-//example with callback:
+//sync examples with try catch
+try{
+	device.openSync(); //opens the first found LabJack device, LJM_OpenS('LJM_dtANY', 'LJM_ctANY', 'LJM_idANY')
+	device.openSync('LJM_dtANY', 'LJM_ctANY', 'LJM_idANY'); //Connect to first-found device
+	device.openSync('LJM_dtT7', 'LJM_USB', '470010642'); //Connect to T7 w/ serial number 470010642 connected via USB
+	device.openSync('LJM_dtT7', 'LJM_ETHERNET', '470010642'); //Connect to T7 w/ serial number 470010642 connected via ETHERNET
+	device.openSync('LJM_dtT7', 'LJM_WIFI', '470010642'); //Connect to T7 w/ serial number 470010642 connected via WIFI
+	device.openSync(7, 1, 470010642); //Connect to T7 w/ serial number 470010642 connected via USB
+}catch(err){
+	//see detailed information about the error and where it came from in the code stack
+	console.trace(err);
+	//you can handle the err here.
+	//if you want the error to exit the node program, simply do not use the try catch
+}
+
+//async example with callback:
 var onSuccess = function(result) {
 	//Code
 }
@@ -193,11 +223,21 @@ Uses LJM_ReadRaw
 #### read(address 'number' or 'string'): 
 Uses LJM_eReadAddress, LJM_eReadName, LJM_eReadNameString, and LJM_eReadAddressString.
 ```javascript
-value = device.readSync('AIN0'); //returns the AIN0 channel reading
-value = device.readSync(0); //returns the AIN0 channel reading
-value = device.readSync('DEVICE_NAME_DEFAULT'); //returns the name of the device
 
-//example with callback:
+//sync example with try catch
+try{
+	value = device.readSync('AIN0'); //returns the AIN0 channel reading
+	value = device.readSync(0); //returns the AIN0 channel reading
+	value = device.readSync('DEVICE_NAME_DEFAULT'); //returns the name of the device
+}catch(err){
+	//see detailed information about the error and where it came from in the code stack
+	console.trace(err);
+	//you can handle the err here.
+	//if you want the error to exit the node program, simply do not use the try catch
+}
+
+
+//async example with callback:
 value = device.read(
 	'AIN0',
 	function (res) {
@@ -213,8 +253,16 @@ value = device.read(
 #### readMany(addresses 'number' or 'string' array): 
 Uses LJM_eReadAddresses and LJM_eReadNames
 ```javascript
-value = device.readManySync(['AIN0', 'AIN1']); //returns an array with AIN0 and AIN1 readings
-value = device.readManySync([0, 1]); //returns an array with AIN0 and AIN1 readings
+//sync example with try catch
+try{
+	value = device.readManySync(['AIN0', 'AIN1']); //returns an array with AIN0 and AIN1 readings
+	value = device.readManySync([0, 1]); //returns an array with AIN0 and AIN1 readings
+}catch(err){
+	//see detailed information about the error and where it came from in the code stack
+	console.trace(err);
+	//you can handle the err here.
+	//if you want the error to exit the node program, simply do not use the try catch
+}
 ```
 
 
@@ -225,11 +273,20 @@ Uses LJM_WriteRaw
 #### write(address 'number' or 'string', value 'number' or 'string'): 
 Uses LJM_eWriteAddress, LJM_eWriteName, LJM_eWriteAddressString, and LJM_eWriteNameString
 ```javascript
-errRes = device.writeSync('DAC0', 1.0); //instructs the T7 to set DAC0 analog output to 1V, returns an error number
-errRes = device.writeSync(1000, 1.0); //instructs the T7 to set DAC0 analog output to 1V, returns an error number
-value = device.writeSync('DEVICE_NAME_DEFAULT', 'NewDeviceName'); //writes a new device name to the device
 
-//example with callback:
+//sync example with try catch
+try{
+	errRes = device.writeSync('DAC0', 1.0); //instructs the T7 to set DAC0 analog output to 1V, returns an error number
+	errRes = device.writeSync(1000, 1.0); //instructs the T7 to set DAC0 analog output to 1V, returns an error number
+	value = device.writeSync('DEVICE_NAME_DEFAULT', 'NewDeviceName'); //writes a new device name to the device
+}catch(err){
+	//see detailed information about the error and where it came from in the code stack
+	console.trace(err);
+	//you can handle the err here.
+	//if you want the error to exit the node program, simply do not use the try catch
+}
+
+//async example with callback:
 errRes = device.write(
 	'DAC0',
 	1.0,
@@ -248,8 +305,18 @@ Uses LJM_eWriteAddresses LJM_eWriteNames
 ```javascript
 //Two Arrays
 //using two separate arrays, one for addresses to write to and one of values
-errRes = device.writeManySync(['DAC0', 'DAC1'], [1.0, 2.0]);
-errRes = device.writeManySync([1000, 1002], [1.0, 2.0]);
+//sync with try catch
+//sync example with try catch
+try{
+	errRes = device.writeManySync(['DAC0', 'DAC1'], [1.0, 2.0]);
+	errRes = device.writeManySync([1000, 1002], [1.0, 2.0]);
+}catch(err){
+	//see detailed information about the error and where it came from in the code stack
+	console.trace(err);
+	//you can handle the err here.
+	//if you want the error to exit the node program, simply do not use the try catch
+}
+
 ```
 
 
@@ -298,10 +365,14 @@ JavaScript wrapper for the rest of the LJM_Driver functions.
 
 ```javascript
 //Require LabJack-nodejs
-var ljn = require('labjack-nodejs');
+const ljn = require('labjack-nodejs');
+
+//ES6
+import * as ljnModule from 'labjack-nodejs';
+const ljn=ljnModule.default;
 
 //Driver Object (to gain access to more general driver-related features)
-var driver = ljn.driver();
+const driver = ljn.driver();
 ```
 
 
@@ -326,13 +397,21 @@ var driver = ljn.driver();
 Uses LJM_ListAll and LJM_ListAllS
 
 ```javascript
-foundDevices = ljmDriver.listAllSync(); //find all T7s
-foundDevices = ljmDriver.listAllSync('LJM_dtANY', 'LJM_ctANY'); //find all T7s
-foundDevices = ljmDriver.listAllSync('LJM_dtT7', 'LJM_ctUSB'); //find all T7s connected via USB
-foundDevices = ljmDriver.listAllSync(7, 1); //find all T7s connected via USB
+//sync example using try catch
 
+try{
+	foundDevices = ljmDriver.listAllSync(); //find all T7s
+	foundDevices = ljmDriver.listAllSync('LJM_dtANY', 'LJM_ctANY'); //find all T7s
+	foundDevices = ljmDriver.listAllSync('LJM_dtT7', 'LJM_ctUSB'); //find all T7s connected via USB
+	foundDevices = ljmDriver.listAllSync(7, 1); //find all T7s connected via USB
+}catch(err){
+	//see detailed information about the error and where it came from in the code stack
+	console.trace(err);
+	//you can handle the err here.
+	//if you want the error to exit the node program, simply do not use the try catch
+}
 
-//using callback functions
+//async example using callback functions
 ljmDriver.listAll(
 	function (err) {
 		console.log('Error', err);
@@ -355,9 +434,17 @@ ljmDriver.listAll(
 #### errToStr(errorNumber): 
 Uses LJM_ErrorToString, converts an error number to a human-readable string-error. The errors can be found in the ljm_constants.json file.
 ```javascript
-console.log(ljmDriver.errToStrSync(0)); //returns the string 'Num 0, LJ_SUCCESS'
-console.log(ljmDriver.errToStrSync(200)); //returns the string 'Num 200, LJME_WARNINGS_BEGIN'
-console.log(ljmDriver.errToStrSync(1268)); //returns the string 'Num 1268, LJME_INVALID_INDEX'
+//sync example with try catch
+try{
+	console.log(ljmDriver.errToStrSync(0)); //returns the string 'Num 0, LJ_SUCCESS'
+	console.log(ljmDriver.errToStrSync(200)); //returns the string 'Num 200, LJME_WARNINGS_BEGIN'
+	console.log(ljmDriver.errToStrSync(1268)); //returns the string 'Num 1268, LJME_INVALID_INDEX'
+}catch(err){
+	//see detailed information about the error and where it came from in the code stack
+	console.trace(err);
+	//you can handle the err here.
+	//if you want the error to exit the node program, simply do not use the try catch
+}
 ```
 
 
