@@ -28,7 +28,7 @@
     ],
     "dependencies": {
         "allocate_buffer": "^1.0.0",
-        "async": "1.5.2",
+        "async": "2.6.4",
         "diff": "^4.0.1",
         "ffi-napi": "^2.4.7",
         "ljm-ffi": "^2.0.0",
